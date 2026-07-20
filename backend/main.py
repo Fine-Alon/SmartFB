@@ -1,4 +1,5 @@
 
+import uvicorn
 
 from fastapi.middleware.cors import CORSMiddleware # הוספת הייבוא הזה
 from fastapi import FastAPI
