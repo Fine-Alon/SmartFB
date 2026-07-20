@@ -9,18 +9,24 @@ from app.core.qr import generate_qr_code_base64
 async def db_create_survey(db: AsyncDatabase, survey_dict: Dict[str, Any]) -> Dict[str, Any]:
     survey_id = ObjectId()
     
-    # Pre-populate required SurveyOut defaults before database insertion
+    # 1. Prepare data
     survey_dict["_id"] = survey_id
     survey_dict["is_active"] = True
     survey_dict["created_at"] = datetime.now(timezone.utc)
 
-    # Build QR code URL (adjust frontend host/port if needed)
+    # 2. Build URL and QR Code
     frontend_url = f"http://localhost:5173/surveys/{str(survey_id)}"
+    
+    # ADD THESE TWO LINES:
+    survey_dict["link"] = frontend_url  # Send the link back to frontend
     survey_dict["qr_code"] = generate_qr_code_base64(frontend_url)
 
+    # 3. Insert to DB
     await db["surveys"].insert_one(survey_dict)
 
+    # 4. Prepare return object (convert _id to string for JSON)
     survey_dict["_id"] = str(survey_id)
+    
     return survey_dict
 
 

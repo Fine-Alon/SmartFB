@@ -35,9 +35,7 @@ const HomePage = () => {
   }
 
   return (
-    // h-screen и overflow-hidden строго фиксируют контент в пределах одного окна
     <div className="h-screen overflow-hidden flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 font-sans">
-      {/* 1. Navigation ( header ) - shrink-0 запрещает шапке сжиматься */}
       <header className="w-full max-w-7xl mx-auto px-6 py-4 flex justify-between items-center shrink-0">
         <div className="text-2xl font-extrabold text-blue-600 tracking-tight">SmartFB</div>
         <Link
@@ -48,9 +46,7 @@ const HomePage = () => {
         </Link>
       </header>
 
-      {/* 2. Main content - центрируем контент и разрешаем ему сжиматься (min-h-0) */}
       <main className="flex-grow flex flex-col items-center justify-center px-6 min-h-0">
-        {/* Уменьшены отступы текста */}
         <div className="text-center max-w-3xl w-full mb-8 shrink-0">
           <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-4 drop-shadow-sm tracking-tight">
             Welcome to SmartFB
@@ -69,7 +65,6 @@ const HomePage = () => {
                 <h3 className="text-base font-bold text-gray-900">Intelligent Feedback Queue</h3>
                 <p className="text-xs text-gray-500">Review AI-processed submissions instantly.</p>
               </div>
-              {/* Картинка теперь подстраивается под высоту родителя */}
               <div className="p-3 flex-1 flex items-center justify-center min-h-0 overflow-hidden">
                 <img
                   src={queuePreview}
