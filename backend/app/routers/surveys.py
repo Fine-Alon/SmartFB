@@ -10,7 +10,10 @@ from app.CRUD.survey_crud import (
 )
 from app.core.security import require_admin
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/surveys", 
+    tags=["Surveys"]
+)
 
 
 @router.post("/", response_model=SurveyOut, status_code=status.HTTP_201_CREATED)
