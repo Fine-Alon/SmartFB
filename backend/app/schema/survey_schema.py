@@ -37,9 +37,13 @@ class SurveyCreate(BaseModel):
 
 
 class SurveyOut(SurveyCreate):
-    id: str
+    id: str = Field(..., alias="_id")  # 👈 Added alias so PyMongo's '_id' maps directly to 'id'
     is_active: bool = True
     created_at: datetime
     created_by: Optional[str] = None
+    qr_code: Optional[str] = None      # 👈 Added Base64 QR code image string field
 
-    model_config = {"from_attributes": True}
+    model_config = {
+        "from_attributes": True,
+        "populate_by_name": True        # 👈 Allows FastAPI to map '_id' -> 'id' automatically
+    }
