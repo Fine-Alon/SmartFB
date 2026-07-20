@@ -42,6 +42,7 @@ class SurveyOut(SurveyCreate):
     created_at: datetime
     created_by: Optional[str] = None
     qr_code: Optional[str] = None      # 👈 Added Base64 QR code image string field
+    
 
     model_config = {
         "from_attributes": True,

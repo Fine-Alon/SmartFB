@@ -1,17 +1,15 @@
 import React from 'react';
 
-const QRCodeDisplay = ({ base64QrCode, title }) => {
-  if (!base64QrCode) return <p>Generating QR Code...</p>;
+const QRCodeDisplay = ({ base64QrCode }) => {
+  if (!base64QrCode) return null;
 
   return (
-    <div className="qr-container">
-      <h3>{title || "Survey QR Code"}</h3>
-      <img 
-        src={`data:image/png;base64,${base64QrCode}`} 
-        alt="Survey QR Code" 
-        style={{ width: '250px', height: '250px', border: '1px solid #ccc' }} 
-      />
-    </div>
+    <img 
+      // This prefix is required by the browser to render the Base64 string as an image
+      src={`data:image/png;base64,${base64QrCode}`} 
+      alt="Survey QR Code" 
+      className="w-32 h-32 mx-auto"
+    />
   );
 };
 
