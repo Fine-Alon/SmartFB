@@ -8,7 +8,7 @@ from ..core.security import hash_password, verify_password
 from ..schema.user_schema import UserCreate, UserOut
 
 
-async def create_user(payload: UserRegister) -> UserOut:
+async def create_user(payload: UserCreate) -> UserOut:
     """
     Registers a new user.
     - Raises 400 if the email is already in use.
@@ -18,8 +18,8 @@ async def create_user(payload: UserRegister) -> UserOut:
     db = get_database()
     users = db["users"]
 
-    # Check for duplicate email
-    existing = users.find_one({"email": payload.email})
+    # תוקן: הוספת await לשליפת משתמש קיים
+    existing = await users.find_one({"email": payload.email})
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -32,7 +32,9 @@ async def create_user(payload: UserRegister) -> UserOut:
         "hashed_password": hashed,
         "role": payload.role,
     }
-    result = users.insert_one(doc)
+    
+    # תוקן: הוספת await להכנסת מסמך חדש למונגו
+    result = await users.insert_one(doc)
 
     return UserOut(
         id=str(result.inserted_id),
@@ -45,7 +47,8 @@ async def authenticate_user(email: str, password: str) -> UserOut:
     db = get_database()
     users = db["users"]
 
-    doc = users.find_one({"email": email})
+    # תוקן: הוספת await לשליפת המשתמש בזמן לוגין כדי למנוע קריסת coroutine object is not subscriptable
+    doc = await users.find_one({"email": email})
     if not doc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
