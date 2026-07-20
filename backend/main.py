@@ -2,16 +2,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.db import connect_to_mongo, close_mongo_connection
-from app.api import auth
+from app.routers import auth
 from app.routers import customer
 
 
 # Lifespan context manager handles DB connection on startup & shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    connect_to_mongo()
+    await connect_to_mongo()
     yield
-    close_mongo_connection()
+    await close_mongo_connection()
 
 
 # Pass lifespan into FastAPI
