@@ -19,6 +19,8 @@ async def analyze_submission_text(text_content: str) -> dict:
         "Fix any spelling or grammatical errors in the user's original text and provide the corrected version. "
         "Evaluate if the message requires urgent human intervention due to: "
         "abusive language, threats, extreme anger, or high-risk business complaints. "
+        "Analyze the sentiment of the text and assign a score from 1 to 5: "
+        "(1 = extremely negative/angry, 2 = negative, 3 = neutral, 4 = positive, 5 = extremely positive/satisfied). "
         "\n\n"
         "CRITICAL: You must return your response strictly as a raw JSON object. "
         "Match this exact schema:\n"
@@ -27,7 +29,8 @@ async def analyze_submission_text(text_content: str) -> dict:
         '  "summary": "string",\n'
         '  "corrected_text": "string",\n'
         '  "is_flagged": boolean,\n'
-        '  "flag_reason": "string or null"\n'
+        '  "flag_reason": "string or null",\n'
+        '  "sentiment_score": integer\n'
         "}"
     )
 
