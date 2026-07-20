@@ -12,6 +12,7 @@ import AdminProfilePage from "./pages/AdminProfilePage"
 import SupportDashboard from "./pages/support/SupportDashboard"
 import ReviewQueue from "./pages/support/ReviewQueue"
 import ProtectedRoute from "./components/common/ProtectedRoute"
+import PublicSurveyPage from "./pages/PublicSurveyPage"
 
 const router = createBrowserRouter([
   {
@@ -21,6 +22,10 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: <AuthPage />,
+  },
+  {
+    path: "/survey/:formId",
+    element: <PublicSurveyPage />,
   },
   {
     element: <ProtectedRoute allowedRoles={["admin", "support"]} />,
