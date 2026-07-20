@@ -3,7 +3,7 @@ Auth router: exposes /auth/register, /auth/login, /auth/logout.
 All database work is delegated to app.services.auth_service.
 """
 from fastapi import APIRouter, Response, status
-from ..schemas.user import UserRegister, UserLogin, UserOut
+from ..schema.user_schema import UserCreate, UserLogin, UserOut
 from ..services import auth_service
 from ..core.security import create_token
 
@@ -13,7 +13,7 @@ COOKIE_NAME = "my_access_token"
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-async def register(payload: UserRegister):
+async def register(payload: UserCreate):
     """
     Register a new internal user (admin or support).
     Returns the created user object (no password).
