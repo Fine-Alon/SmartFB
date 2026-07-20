@@ -55,7 +55,7 @@ const AdminProfilePage = () => {
 
     try {
       // send POST to back
-      const response = await axiosClient.post("/api/auth/register", {
+      const response = await axiosClient.post("/auth/register", {
         email: supportEmail,
         password: supportPassword,
       })

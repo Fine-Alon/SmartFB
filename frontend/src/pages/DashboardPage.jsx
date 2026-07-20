@@ -1,14 +1,27 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
+import axiosClient from "../api/axiosClient"
+import { API_ENDPOINTS } from "../api/apiConfig"
 
 const DashboardPage = () => {
-  // Mock data for hackathon visualization
-  const metrics = {
-    totalSubmissions: 142,
-    autoCategorized: 118,
-    pendingReview: 24,
-    activeForms: 3,
-  }
+  const [metrics, setMetrics] = useState({
+    total_submissions: 0,
+    auto_categorized: 0,
+    pending_review: 0,
+    active_forms: 0,
+  })
+  
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await axiosClient.get(API_ENDPOINTS.ANALYTICS.GET_GLOBAL_STATS)
+        setMetrics(response)
+      } catch (err) {
+        console.error("Failed to fetch dashboard metrics", err)
+      }
+    }
+    fetchStats()
+  }, [])
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -22,19 +35,19 @@ const DashboardPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <p className="text-sm font-medium text-gray-500 mb-1">Total Submissions</p>
-          <p className="text-3xl font-bold text-gray-900">{metrics.totalSubmissions}</p>
+          <p className="text-3xl font-bold text-gray-900">{metrics.total_submissions}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <p className="text-sm font-medium text-gray-500 mb-1">Active Forms</p>
-          <p className="text-3xl font-bold text-gray-900">{metrics.activeForms}</p>
+          <p className="text-3xl font-bold text-gray-900">{metrics.active_forms}</p>
         </div>
 
         <div className="bg-green-50 p-6 rounded-xl shadow-sm border border-green-100">
           <div className="flex items-center justify-between mb-1">
             <p className="text-sm font-medium text-green-800">🟢 AI Auto-Resolved</p>
           </div>
-          <p className="text-3xl font-bold text-green-900">{metrics.autoCategorized}</p>
+          <p className="text-3xl font-bold text-green-900">{metrics.auto_categorized}</p>
           <p className="text-xs text-green-700 mt-1">Standard feedback handled safely</p>
         </div>
 
@@ -42,7 +55,7 @@ const DashboardPage = () => {
           <div className="flex items-center justify-between mb-1">
             <p className="text-sm font-medium text-red-800">🔴 Requires Human Review</p>
           </div>
-          <p className="text-3xl font-bold text-red-900">{metrics.pendingReview}</p>
+          <p className="text-3xl font-bold text-red-900">{metrics.pending_review}</p>
           <p className="text-xs text-red-700 mt-1">Threats or extreme content flagged</p>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
+import axiosClient from "../api/axiosClient"
 
 const PublicSurveyPage = () => {
   const { formId } = useParams() // get ID from URL form (like: /survey/f8a9d2b1)
@@ -13,50 +14,25 @@ const PublicSurveyPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
-  // --- 1. Имитация GET-запроса (Загрузка формы) ---
+  // --- 1. GET-запрос: Загрузка формы из бэкенда ---
   useEffect(() => {
-    // В будущем здесь будет: axios.get(`/api/public/forms/${formId}`)
     const fetchForm = async () => {
       setIsLoading(true)
       try {
-        // Имитируем задержку сети (1 секунда)
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // Fake JSON ответ от FastAPI
-        const mockBackendResponse = {
-          id: formId,
-          businessName: "CyberPro Cafe",
-          title: "Оцените ваш визит",
-          description: "Нам очень важно ваше мнение. Это займет меньше минуты.",
-          fields: [
-            { id: "q_rating", type: "rating", label: "Как вы оцените качество обслуживания?", required: true },
-            {
-              id: "q_comment",
-              type: "textarea",
-              label: "Что нам стоит улучшить?",
-              placeholder: "Напишите ваши впечатления...",
-              required: false,
-            },
-            {
-              id: "q_email",
-              type: "email",
-              label: "Оставьте email, если хотите получить скидку (необязательно)",
-              placeholder: "ваш@email.com",
-              required: false,
-            },
-          ],
-        }
-
-        setFormConfig(mockBackendResponse)
+        const response = await axiosClient.get(`/surveys/${formId}`)
+        setFormConfig(response)
 
         // Инициализируем пустые ответы на основе полей
         const initialAnswers = {}
-        mockBackendResponse.fields.forEach(field => {
-          initialAnswers[field.id] = field.type === "rating" ? 0 : ""
-        })
+        if (response.questions) {
+          response.questions.forEach(field => {
+            initialAnswers[field.question_id] = field.type === "rating" ? 0 : ""
+          })
+        }
         setAnswers(initialAnswers)
       } catch (err) {
-        setError("The form is not found.")
+        console.error("Error loading survey:", err)
+        setError("The form was not found or is inactive.")
       } finally {
         setIsLoading(false)
       }
@@ -73,35 +49,30 @@ const PublicSurveyPage = () => {
     }))
   }
 
-  // --- 2. Имитация POST-запроса (Отправка отзыва) ---
+  // --- 2. POST-запрос: Отправка отзыва в бэкенд ---
   const handleSubmit = async e => {
     e.preventDefault()
     setIsSubmitting(true)
 
     // validation: Checking if the necessary rating was submitted.
-    if (answers["q_rating"] === 0) {
-      alert("Please rate the service with stars.")
-      setIsSubmitting(false)
-      return
+    // Находим обязательные поля рейтинга и проверяем, что они заполнены
+    const ratingFields = formConfig.questions.filter(f => f.type === "rating" && f.is_required)
+    for (let f of ratingFields) {
+      if (!answers[f.question_id] || answers[f.question_id] === 0) {
+        alert(`Please fill in the rating for: ${f.label}`)
+        setIsSubmitting(false)
+        return
+      }
     }
 
     try {
-      // get ready Payload for FastAPI
-      const payload = {
-        formId: formId,
-        submittedAt: new Date().toISOString(),
-        answers: answers,
-      }
-      console.log("Sending to backend POST /api/public/feedback:", payload)
-
-      // imitate network latency
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-      // In future here will be: await axios.post(`/api/public/feedback`, payload);
-
+      await axiosClient.post(`/submissions/${formId}`, {
+        answers: answers
+      })
       setIsSubmitted(true) // Show thankful message
     } catch (err) {
-      alert("An error occurred while submitting. Please try again.")
+      console.error("Error submitting feedback:", err)
+      alert(err.response?.data?.detail || "An error occurred while submitting. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -147,7 +118,7 @@ const PublicSurveyPage = () => {
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6">
       <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="bg-blue-600 p-6 text-white text-center">
-          <h2 className="text-sm font-semibold tracking-wider uppercase opacity-80 mb-1">{formConfig.businessName}</h2>
+          <h2 className="text-sm font-semibold tracking-wider uppercase opacity-80 mb-1">SmartFB</h2>
           <h1 className="text-2xl font-bold">{formConfig.title}</h1>
         </div>
 
@@ -155,10 +126,10 @@ const PublicSurveyPage = () => {
           <p className="text-gray-600 text-sm text-center -mt-2 mb-6">{formConfig.description}</p>
 
           {/* Dynamic rendering of fields (based on JSON from backend) */}
-          {formConfig.fields.map(field => (
-            <div key={field.id} className="space-y-3">
+          {formConfig.questions && formConfig.questions.map(field => (
+            <div key={field.question_id} className="space-y-3">
               <label className="block text-sm font-medium text-gray-800">
-                {field.label} {field.required && <span className="text-red-500">*</span>}
+                {field.label} {field.is_required && <span className="text-red-500">*</span>}
               </label>
 
               {/* type: rating (stars) */}
@@ -168,11 +139,11 @@ const PublicSurveyPage = () => {
                     <button
                       key={star}
                       type="button"
-                      onClick={() => handleAnswerChange(field.id, star)}
+                      onClick={() => handleAnswerChange(field.question_id, star)}
                       className="focus:outline-none transition-transform active:scale-90"
                     >
                       <svg
-                        className={`w-12 h-12 ${answers[field.id] >= star ? "text-yellow-400" : "text-gray-200"}`}
+                        className={`w-12 h-12 ${answers[field.question_id] >= star ? "text-yellow-400" : "text-gray-200"}`}
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -183,28 +154,36 @@ const PublicSurveyPage = () => {
                 </div>
               )}
 
-              {/* type: Textarea */}
-              {field.type === "textarea" && (
+              {/* type: Open Answer (textarea) */}
+              {field.type === "open_answer" && (
                 <textarea
                   rows="4"
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors resize-none"
-                  placeholder={field.placeholder}
-                  value={answers[field.id]}
-                  onChange={e => handleAnswerChange(field.id, e.target.value)}
-                  required={field.required}
+                  placeholder="Share your thoughts..."
+                  value={answers[field.question_id] || ""}
+                  onChange={e => handleAnswerChange(field.question_id, e.target.value)}
+                  required={field.is_required}
                 ></textarea>
               )}
 
-              {/* type: Email */}
-              {field.type === "email" && (
-                <input
-                  type="email"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
-                  placeholder={field.placeholder}
-                  value={answers[field.id]}
-                  onChange={e => handleAnswerChange(field.id, e.target.value)}
-                  required={field.required}
-                />
+              {/* type: Multiple Choice */}
+              {field.type === "multiple_choice" && (
+                <div className="space-y-2">
+                  {field.options && field.options.map(option => (
+                    <label key={option} className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 cursor-pointer transition-colors">
+                      <input
+                        type="radio"
+                        name={field.question_id}
+                        value={option}
+                        checked={answers[field.question_id] === option}
+                        onChange={e => handleAnswerChange(field.question_id, e.target.value)}
+                        required={field.is_required}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{option}</span>
+                    </label>
+                  ))}
+                </div>
               )}
             </div>
           ))}
@@ -226,3 +205,4 @@ const PublicSurveyPage = () => {
 }
 
 export default PublicSurveyPage
+

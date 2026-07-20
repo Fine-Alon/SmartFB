@@ -1,4 +1,5 @@
 import React, { useState } from "react"
+import axiosClient from "../api/axiosClient"
 
 const FormBuilderPage = () => {
   const [formTitle, setFormTitle] = useState("Customer Feedback Survey")
@@ -10,6 +11,7 @@ const FormBuilderPage = () => {
   // Publish state
   const [isPublished, setIsPublished] = useState(false)
   const [publishedLink, setPublishedLink] = useState("")
+  const [error, setError] = useState("")
 
   // --- Actions ---
 
@@ -57,14 +59,32 @@ const FormBuilderPage = () => {
     )
   }
 
-  const handlePublish = () => {
-    // In a real app, you would POST this schema to your FastAPI backend here
-    const formSchema = { formTitle, formDescription, fields }
-    console.log("Publishing Form to Database:", formSchema)
+  const handlePublish = async () => {
+    setError("")
+    // Construct the payload matching the backend SurveyCreate schema
+    const formSchema = {
+      title: formTitle,
+      description: formDescription,
+      questions: fields.map(field => ({
+        question_id: field.id,
+        label: field.label,
+        type: field.type === "text" ? "open_answer" : field.type,
+        is_required: field.required,
+        options: field.type === "multiple_choice" ? field.options : null
+      }))
+    }
 
-    // Simulate generation of the public link
-    setPublishedLink(`https://smartfb.com/share/${Date.now()}`)
-    setIsPublished(true)
+    try {
+      const response = await axiosClient.post("/surveys/", formSchema)
+      const formId = response.id || response._id
+      
+      // Update link with the actual ObjectId from MongoDB
+      setPublishedLink(`${window.location.origin}/survey/${formId}`)
+      setIsPublished(true)
+    } catch (err) {
+      console.error("Publishing failed:", err)
+      setError(err.response?.data?.detail || "Failed to publish form. Make sure you are logged in as admin.")
+    }
   }
 
   return (
@@ -85,6 +105,12 @@ const FormBuilderPage = () => {
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Main Builder Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -271,12 +297,12 @@ const FormBuilderPage = () => {
 
               <div className="text-center bg-white p-4 rounded-lg border border-green-200">
                 <p className="text-xs font-semibold text-gray-500 mb-2">QR Code</p>
-                {/* 
-                  Hackathon Tip: Once you install qrcode.react, replace this div with:
-                  <QRCodeCanvas value={publishedLink} size={128} className="mx-auto" />
-                */}
-                <div className="w-32 h-32 bg-gray-200 mx-auto flex items-center justify-center border-4 border-white shadow-sm rounded">
-                  <span className="text-[10px] text-gray-400">Mock QR</span>
+                <div className="w-32 h-32 mx-auto flex items-center justify-center border-4 border-white shadow-sm rounded overflow-hidden">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(publishedLink)}`} 
+                    alt="Survey QR Code" 
+                    className="w-full h-full object-contain"
+                  />
                 </div>
               </div>
             </div>

@@ -16,8 +16,8 @@ const FeedbackPage = () => {
   }, [dispatch])
 
   const filteredFeedbacks = feedbacks.filter(feedback => {
-    if (activeFilter === "Requires Review") return feedback.status === "requires_human_review"
-    if (activeFilter === "Auto-Resolved") return feedback.status === "auto_categorized"
+    if (activeFilter === "Requires Review") return feedback.status === "pending_human_review"
+    if (activeFilter === "Auto-Resolved") return feedback.status === "auto_processed" || feedback.status === "resolved"
     return true
   })
 
@@ -74,16 +74,18 @@ const FeedbackPage = () => {
                 <tr key={ticket.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900">{ticket.id}</div>
-                    <div className="text-xs text-gray-400">{ticket.date}</div>
+                    <div className="text-xs text-gray-400">{new Date(ticket.created_at).toLocaleDateString()}</div>
                   </td>
-                  <td className="px-6 py-4">{ticket.customer}</td>
+                  <td className="px-6 py-4">
+                    {Object.values(ticket.original_answers || {}).find(v => typeof v === 'string' && (v.includes('@') || v.length < 20)) || "Anonymous"}
+                  </td>
                   <td className="px-6 py-4">
                     <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-medium">
-                      {ticket.aiCategory}
+                      {ticket.ai_analysis?.category || "Unknown"}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    {ticket.status === "requires_human_review" ? (
+                    {ticket.status === "pending_human_review" ? (
                       <span className="inline-flex items-center text-red-700 bg-red-50 px-2.5 py-1 rounded-full text-xs font-medium border border-red-200">
                         <span className="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span>
                         Review Needed
@@ -141,7 +143,7 @@ const FeedbackPage = () => {
             <div className="p-6 space-y-6">
               {/* AI Analysis Block */}
               <div
-                className={`p-4 rounded-lg border ${selectedFeedback.status === "requires_human_review" ? "bg-red-50 border-red-100" : "bg-blue-50 border-blue-100"}`}
+                className={`p-4 rounded-lg border ${selectedFeedback.status === "pending_human_review" ? "bg-red-50 border-red-100" : "bg-blue-50 border-blue-100"}`}
               >
                 <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center">
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,19 +152,19 @@ const FeedbackPage = () => {
                   AI Analysis
                 </h3>
                 <p className="text-sm text-gray-800 mb-3">
-                  <span className="font-semibold">Summary:</span> {selectedFeedback.aiSummary}
+                  <span className="font-semibold">Summary:</span> {selectedFeedback.ai_analysis?.summary || "N/A"}
                 </p>
                 <div className="flex gap-3 text-xs">
                   <span className="bg-white px-2 py-1 rounded shadow-sm">
-                    Category: <b>{selectedFeedback.aiCategory}</b>
+                    Category: <b>{selectedFeedback.ai_analysis?.category || "Unknown"}</b>
                   </span>
                   <span className="bg-white px-2 py-1 rounded shadow-sm">
-                    Sentiment: <b>{selectedFeedback.aiSentiment}</b>
+                    Sentiment: <b>{selectedFeedback.ai_analysis?.sentiment_score ?? "N/A"}</b>
                   </span>
                 </div>
-                {selectedFeedback.flagReason && (
+                {selectedFeedback.ai_analysis?.flag_reason && (
                   <div className="mt-3 text-sm text-red-700 bg-red-100 px-3 py-2 rounded">
-                    <b>Flagged Reason:</b> {selectedFeedback.flagReason}
+                    <b>Flagged Reason:</b> {selectedFeedback.ai_analysis.flag_reason}
                   </div>
                 )}
               </div>
@@ -171,7 +173,7 @@ const FeedbackPage = () => {
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Original Customer Message</h3>
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-800 whitespace-pre-wrap">
-                  {selectedFeedback.rawText}
+                  {JSON.stringify(selectedFeedback.original_answers, null, 2)}
                 </div>
               </div>
 
@@ -196,7 +198,7 @@ const FeedbackPage = () => {
               >
                 Close
               </button>
-              {selectedFeedback.status === "requires_human_review" && (
+              {selectedFeedback.status === "pending_human_review" && (
                 <button
                   onClick={() => handleResolve(selectedFeedback.id)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
