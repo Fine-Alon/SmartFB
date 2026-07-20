@@ -1,71 +1,50 @@
 import React, { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
+import axiosClient from "../api/axiosClient" // Adjust this path to where your axiosClient is located
 
 const PublicSurveyPage = () => {
-  const { formId } = useParams() // get ID from URL form (like: /survey/f8a9d2b1)
+  const { formId } = useParams()
 
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const [formConfig, setFormConfig] = useState(null) // form setting, that come from backend
-  const [answers, setAnswers] = useState({}) // Guest answers
+  const [formConfig, setFormConfig] = useState(null)
+  const [answers, setAnswers] = useState({})
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
-  // --- 1. Имитация GET-запроса (Загрузка формы) ---
+  // --- 1. Fetch form data (GET request) ---
   useEffect(() => {
-    // В будущем здесь будет: axios.get(`/api/public/forms/${formId}`)
     const fetchForm = async () => {
       setIsLoading(true)
       try {
-        // Имитируем задержку сети (1 секунда)
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Axios automatically handles the baseURL and JSON parsing.
+        // It also directly returns response.data because of your interceptor.
+        const data = await axiosClient.get(`/surveys/${formId}`)
 
-        // Fake JSON ответ от FastAPI
-        const mockBackendResponse = {
-          id: formId,
-          businessName: "CyberPro Cafe",
-          title: "Оцените ваш визит",
-          description: "Нам очень важно ваше мнение. Это займет меньше минуты.",
-          fields: [
-            { id: "q_rating", type: "rating", label: "Как вы оцените качество обслуживания?", required: true },
-            {
-              id: "q_comment",
-              type: "textarea",
-              label: "Что нам стоит улучшить?",
-              placeholder: "Напишите ваши впечатления...",
-              required: false,
-            },
-            {
-              id: "q_email",
-              type: "email",
-              label: "Оставьте email, если хотите получить скидку (необязательно)",
-              placeholder: "ваш@email.com",
-              required: false,
-            },
-          ],
-        }
+        setFormConfig(data)
 
-        setFormConfig(mockBackendResponse)
-
-        // Инициализируем пустые ответы на основе полей
+        // Initialize empty answers based on received fields
         const initialAnswers = {}
-        mockBackendResponse.fields.forEach(field => {
+        data.fields.forEach(field => {
           initialAnswers[field.id] = field.type === "rating" ? 0 : ""
         })
         setAnswers(initialAnswers)
       } catch (err) {
-        setError("The form is not found.")
+        console.error("Fetch form error:", err)
+        setError("The form is not found or currently unavailable.")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchForm()
+    if (formId) {
+      fetchForm()
+    }
   }, [formId])
 
-  // --- Обработчики ввода ---
+  // --- Input Handlers ---
   const handleAnswerChange = (fieldId, value) => {
     setAnswers(prev => ({
       ...prev,
@@ -73,12 +52,12 @@ const PublicSurveyPage = () => {
     }))
   }
 
-  // --- 2. Имитация POST-запроса (Отправка отзыва) ---
+  // --- 2. Submit feedback (POST request) ---
   const handleSubmit = async e => {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // validation: Checking if the necessary rating was submitted.
+    // Validation: check if rating stars are selected
     if (answers["q_rating"] === 0) {
       alert("Please rate the service with stars.")
       setIsSubmitting(false)
@@ -86,27 +65,26 @@ const PublicSurveyPage = () => {
     }
 
     try {
-      // get ready Payload for FastAPI
       const payload = {
         formId: formId,
         submittedAt: new Date().toISOString(),
         answers: answers,
       }
-      console.log("Sending to backend POST /api/public/feedback:", payload)
 
-      // imitate network latency
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Send data to backend via Axios
+      await axiosClient.post(`/surveys`, payload)
 
-      // In future here will be: await axios.post(`/api/public/feedback`, payload);
-
-      setIsSubmitted(true) // Show thankful message
+      // If successful, show thank you screen
+      setIsSubmitted(true)
     } catch (err) {
+      console.error("Submit error:", err)
       alert("An error occurred while submitting. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  // Loading Screen
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -115,7 +93,7 @@ const PublicSurveyPage = () => {
     )
   }
 
-  // Error: the form was deleted
+  // Error Screen (if form not found or deleted)
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 text-center">
@@ -124,7 +102,7 @@ const PublicSurveyPage = () => {
     )
   }
 
-  // Thankful screen.
+  // Thank You Screen
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
@@ -142,7 +120,7 @@ const PublicSurveyPage = () => {
     )
   }
 
-  // form itself (Mobile-first)
+  // The Survey Form
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6">
       <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -154,7 +132,7 @@ const PublicSurveyPage = () => {
         <form onSubmit={handleSubmit} className="p-6 space-y-8">
           <p className="text-gray-600 text-sm text-center -mt-2 mb-6">{formConfig.description}</p>
 
-          {/* Dynamic rendering of fields (based on JSON from backend) */}
+          {/* Dynamic field rendering */}
           {formConfig.fields.map(field => (
             <div key={field.id} className="space-y-3">
               <label className="block text-sm font-medium text-gray-800">
@@ -183,7 +161,7 @@ const PublicSurveyPage = () => {
                 </div>
               )}
 
-              {/* type: Textarea */}
+              {/* type: textarea */}
               {field.type === "textarea" && (
                 <textarea
                   rows="4"
@@ -195,7 +173,7 @@ const PublicSurveyPage = () => {
                 ></textarea>
               )}
 
-              {/* type: Email */}
+              {/* type: email */}
               {field.type === "email" && (
                 <input
                   type="email"
@@ -209,7 +187,7 @@ const PublicSurveyPage = () => {
             </div>
           ))}
 
-          {/* Submit button */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={isSubmitting}
