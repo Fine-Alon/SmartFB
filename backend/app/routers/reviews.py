@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
+from bson import ObjectId
 from pydantic import BaseModel
 from ..core.security import RoleChecker
+from ..core.db import get_database
 from ..services.analist_service import get_pending_reviews, resolve_submission, get_all_reviews
 
 router = APIRouter(prefix="/reviews", tags=["Human Review Queue"])
@@ -32,3 +34,23 @@ async def resolve_flagged_submission(
     """עדכון סטטוס הפנייה לפתורה בצירוף הערות הבודק האנושי"""
     await resolve_submission(submission_id, payload.reviewer_notes)
     return {"message": "Submission resolved successfully"}
+
+@router.delete("/{submission_id}", status_code=status.HTTP_200_OK)
+async def delete_submission(
+    submission_id: str,
+    current_user: tuple = Depends(allow_internal_staff)
+):
+    """מחיקת פנייה מהמערכת"""
+    db = get_database()
+    try:
+        obj_id = ObjectId(submission_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid submission ID format")
+        
+    # Ensure this matches the collection name where your reviews/submissions are stored (e.g., "submissions" or "reviews")
+    result = await db["submissions"].delete_one({"_id": obj_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Submission not found")
+        
+    return {"message": "Submission deleted successfully"}

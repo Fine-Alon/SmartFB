@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { fetchFeedbacks, setFilter, updateFeedbackStatus } from "../store/slices/queueSlice"
-import QRCodeDisplay from "../components/common/QRCodeDisplay";
+import QRCodeDisplay from "../components/common/QRCodeDisplay"
+import axiosClient from "../api/axiosClient"
 
 const FeedbackPage = () => {
   const dispatch = useDispatch()
 
   const { feedbacks, isLoading, error, activeFilter } = useSelector(state => state.queue)
 
-  //  Manage opened modal window
+  // Manage opened modal window
   const [selectedFeedback, setSelectedFeedback] = useState(null)
 
   useEffect(() => {
@@ -23,7 +24,21 @@ const FeedbackPage = () => {
 
   const handleResolve = id => {
     dispatch(updateFeedbackStatus({ feedbackId: id, notes: "Resolved via dashboard" }))
-    setSelectedFeedback(null) // Close model window.
+    setSelectedFeedback(null) // Close modal window.
+  }
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this feedback?")) {
+      try {
+        // Change from /surveys/${id} to /reviews/${id}
+        await axiosClient.delete(`/reviews/${id}`)
+        dispatch(fetchFeedbacks()) // Refreshes the Redux store queue automatically
+        setSelectedFeedback(null)  // Close modal if open
+      } catch (error) {
+        console.error("Error deleting feedback:", error)
+        alert("Failed to delete feedback.")
+      }
+    }
   }
 
   // Loading in handler
@@ -44,7 +59,6 @@ const FeedbackPage = () => {
           {["All", "Requires Review", "Auto-Resolved"].map(f => (
             <button
               key={f}
-              // Switch filters by Redux dispatch
               onClick={() => dispatch(setFilter(f))}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeFilter === f ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
@@ -71,7 +85,7 @@ const FeedbackPage = () => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredFeedbacks.map(ticket => (
-                <tr key={ticket.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={ticket._id || ticket.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900">{ticket.id}</div>
                     <div className="text-xs text-gray-400">{new Date(ticket.created_at).toLocaleDateString()}</div>
@@ -101,9 +115,15 @@ const FeedbackPage = () => {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right space-x-3">
                     <button onClick={() => setSelectedFeedback(ticket)} className="text-blue-600 hover:text-blue-800 font-medium">
                       View Details
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(ticket._id || ticket.id)}
+                      className="text-red-600 hover:text-red-800 font-medium"
+                    >
+                      Delete
                     </button>
                   </td>
                 </tr>
@@ -127,10 +147,7 @@ const FeedbackPage = () => {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Ticket {selectedFeedback.id}</h2>
-                <p className="text-sm text-gray-500">
-                  From: {selectedFeedback.customer} ({selectedFeedback.contact})
-                </p>
+                <h2 className="text-xl font-bold text-gray-900">Ticket {selectedFeedback._id || selectedFeedback.id}</h2>
               </div>
               <button onClick={() => setSelectedFeedback(null)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,21 +208,30 @@ const FeedbackPage = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-xl">
+            <div className="p-6 border-t border-gray-100 flex justify-between items-center bg-gray-50 rounded-b-xl">
               <button
-                onClick={() => setSelectedFeedback(null)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                onClick={() => handleDelete(selectedFeedback._id || selectedFeedback.id)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm text-sm"
               >
-                Close
+                Delete Survey
               </button>
-              {selectedFeedback.status === "pending_human_review" && (
+              
+              <div className="flex gap-3">
                 <button
-                  onClick={() => handleResolve(selectedFeedback.id)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                  onClick={() => setSelectedFeedback(null)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  Mark as Resolved
+                  Close
                 </button>
-              )}
+                {selectedFeedback.status === "pending_human_review" && (
+                  <button
+                    onClick={() => handleResolve(selectedFeedback.id)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                  >
+                    Mark as Resolved
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
