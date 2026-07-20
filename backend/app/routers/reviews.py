@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
 from ..core.security import RoleChecker
-from ..services.analist_service import get_pending_reviews, resolve_submission
+from ..services.analist_service import get_pending_reviews, resolve_submission, get_all_reviews
 
 router = APIRouter(prefix="/reviews", tags=["Human Review Queue"])
 
@@ -16,6 +16,12 @@ async def get_review_queue(current_user: tuple = Depends(allow_internal_staff)):
     """שליפת כל הפניות המסומנות בדגל אדום וממתינות לטיפול אנושי"""
     queue_data = await get_pending_reviews()
     return queue_data
+
+@router.get("/all")
+async def get_all_submissions(current_user: tuple = Depends(allow_internal_staff)):
+    """שליפת כל הפניות (כולל פתורות אוטומטית)"""
+    all_data = await get_all_reviews()
+    return all_data
 
 @router.patch("/{submission_id}/resolve", status_code=status.HTTP_200_OK)
 async def resolve_flagged_submission(

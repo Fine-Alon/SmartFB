@@ -191,3 +191,42 @@ async def resolve_submission(submission_id: str, reviewer_notes: str) -> bool:
         )
         
     return True
+
+async def get_global_statistics() -> dict:
+    db = get_database()
+    
+    total_submissions = await db.submissions.count_documents({})
+    
+    status_pipeline = [
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]
+    status_cursor = await db.submissions.aggregate(status_pipeline)
+    status_breakdown: dict[str, int] = {
+        str(doc["_id"]): int(doc["count"]) 
+        async for doc in status_cursor 
+        if doc.get("_id")
+    }
+
+    pending_review = status_breakdown.get("pending_human_review", 0)
+    auto_categorized = status_breakdown.get("auto_processed", 0) + status_breakdown.get("resolved", 0)
+    
+    active_forms = await db.surveys.count_documents({"is_active": True})
+
+    return {
+        "total_submissions": total_submissions,
+        "auto_categorized": auto_categorized,
+        "pending_review": pending_review,
+        "active_forms": active_forms
+    }
+
+async def get_all_reviews() -> list[dict]:
+    db = get_database()
+    cursor = db.submissions.find({}).sort("created_at", -1)
+    
+    reviews = []
+    async for doc in cursor:
+        doc["id"] = str(doc["_id"])
+        del doc["_id"]
+        reviews.append(doc)
+        
+    return reviews

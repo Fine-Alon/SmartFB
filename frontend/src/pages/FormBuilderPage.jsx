@@ -1,6 +1,5 @@
 import React, { useState } from "react"
-import QRCodeDisplay from '../components/common/QRCodeDisplay';
-import axiosClient from '../api/axiosClient';
+import axiosClient from "../api/axiosClient"
 
 const FormBuilderPage = () => {
   const [formTitle, setFormTitle] = useState("Customer Feedback Survey")
@@ -12,8 +11,7 @@ const FormBuilderPage = () => {
   // Publish state
   const [isPublished, setIsPublished] = useState(false)
   const [publishedLink, setPublishedLink] = useState("")
-  // New state for QR data
-  const [qrCodeData, setQrCodeData] = useState(null)
+  const [error, setError] = useState("")
 
   // --- Actions ---
 
@@ -62,50 +60,32 @@ const FormBuilderPage = () => {
   }
 
   const handlePublish = async () => {
-  // 1. Translate the frontend array to match the backend schema exactly
-  const formattedQuestions = fields.map((field) => {
-    // Translate the type so FastAPI doesn't freak out
-    let backendType = field.type;
-    if (field.type === "text") {
-      backendType = "open_answer";
-    } 
-    // Note: If your frontend uses something like "radio" or "checkbox" 
-    // for multiple choice, you can add another 'if' statement here to 
-    // change it to "multiple_choice"!
+    setError("")
+    // Construct the payload matching the backend SurveyCreate schema
+    const formSchema = {
+      title: formTitle,
+      description: formDescription,
+      questions: fields.map(field => ({
+        question_id: field.id,
+        label: field.label,
+        type: field.type === "text" ? "open_answer" : field.type,
+        is_required: field.required,
+        options: field.type === "multiple_choice" ? field.options : null
+      }))
+    }
 
-    return {
-      question_id: field.id,
-      label: field.label,
-      type: backendType,           // <--- Now sends "open_answer" instead of "text"
-      is_required: field.required,
-      options: field.options
-    };
-  });
-
-  // 2. Put it all together for the final payload
-  const formSchema = { 
-    title: formTitle,             
-    description: formDescription, 
-    questions: formattedQuestions 
-  };
-  
-  try {
-    console.log("Publishing Form to Database:", formSchema);
-
-    const response = await axiosClient.post('/surveys/', formSchema);
-
-    // Try accessing the link and qr_code directly from 'response'
-    console.log("Response from server:", response); // Look at this in your console!
-
-    setPublishedLink(response.link);
-    setQrCodeData(response.qr_code); 
-    
-    setIsPublished(true);
-  } catch (error) {
-    console.error("Error publishing form:", error);
-    alert("Failed to publish form. Please check your backend.");
+    try {
+      const response = await axiosClient.post("/surveys/", formSchema)
+      const formId = response.id || response._id
+      
+      // Update link with the actual ObjectId from MongoDB
+      setPublishedLink(`${window.location.origin}/survey/${formId}`)
+      setIsPublished(true)
+    } catch (err) {
+      console.error("Publishing failed:", err)
+      setError(err.response?.data?.detail || "Failed to publish form. Make sure you are logged in as admin.")
+    }
   }
-}
 
   return (
     <div className="max-w-4xl mx-auto pb-12">
@@ -125,6 +105,12 @@ const FormBuilderPage = () => {
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Main Builder Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -311,13 +297,13 @@ const FormBuilderPage = () => {
 
               <div className="text-center bg-white p-4 rounded-lg border border-green-200">
                 <p className="text-xs font-semibold text-gray-500 mb-2">QR Code</p>
-                {qrCodeData ? (
-                  <QRCodeDisplay base64QrCode={qrCodeData} />
-                ) : (
-                  <div className="w-32 h-32 bg-gray-200 mx-auto flex items-center justify-center border-4 border-white shadow-sm rounded">
-                    <span className="text-[10px] text-gray-400">Loading...</span>
-                  </div>
-                )}
+                <div className="w-32 h-32 mx-auto flex items-center justify-center border-4 border-white shadow-sm rounded overflow-hidden">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(publishedLink)}`} 
+                    alt="Survey QR Code" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               </div>
             </div>
           )}

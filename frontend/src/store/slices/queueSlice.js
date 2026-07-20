@@ -5,7 +5,7 @@ import { API_ENDPOINTS } from "../../api/apiConfig"
 // 1. get feedbacks from the backend
 export const fetchFeedbacks = createAsyncThunk("queue/fetchFeedbacks", async (_, { rejectWithValue }) => {
   try {
-    const response = await axiosClient.get(API_ENDPOINTS.REVIEWS.GET_QUEUE)
+    const response = await axiosClient.get(API_ENDPOINTS.REVIEWS.GET_ALL)
     return response // axiosClient interceptor returns response.data directly
   } catch (error) {
     return rejectWithValue(error.response?.data?.detail || "Failed to fetch feedbacks from server")
