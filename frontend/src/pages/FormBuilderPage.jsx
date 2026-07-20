@@ -1,4 +1,6 @@
 import React, { useState } from "react"
+import QRCodeDisplay from '../components/common/QRCodeDisplay';
+import axiosClient from '../api/axiosClient';
 
 const FormBuilderPage = () => {
   const [formTitle, setFormTitle] = useState("Customer Feedback Survey")
@@ -10,6 +12,8 @@ const FormBuilderPage = () => {
   // Publish state
   const [isPublished, setIsPublished] = useState(false)
   const [publishedLink, setPublishedLink] = useState("")
+  // New state for QR data
+  const [qrCodeData, setQrCodeData] = useState(null)
 
   // --- Actions ---
 
@@ -57,15 +61,51 @@ const FormBuilderPage = () => {
     )
   }
 
-  const handlePublish = () => {
-    // In a real app, you would POST this schema to your FastAPI backend here
-    const formSchema = { formTitle, formDescription, fields }
-    console.log("Publishing Form to Database:", formSchema)
+  const handlePublish = async () => {
+  // 1. Translate the frontend array to match the backend schema exactly
+  const formattedQuestions = fields.map((field) => {
+    // Translate the type so FastAPI doesn't freak out
+    let backendType = field.type;
+    if (field.type === "text") {
+      backendType = "open_answer";
+    } 
+    // Note: If your frontend uses something like "radio" or "checkbox" 
+    // for multiple choice, you can add another 'if' statement here to 
+    // change it to "multiple_choice"!
 
-    // Simulate generation of the public link
-    setPublishedLink(`https://smartfb.com/share/${Date.now()}`)
-    setIsPublished(true)
+    return {
+      question_id: field.id,
+      label: field.label,
+      type: backendType,           // <--- Now sends "open_answer" instead of "text"
+      is_required: field.required,
+      options: field.options
+    };
+  });
+
+  // 2. Put it all together for the final payload
+  const formSchema = { 
+    title: formTitle,             
+    description: formDescription, 
+    questions: formattedQuestions 
+  };
+  
+  try {
+    console.log("Publishing Form to Database:", formSchema);
+
+    const response = await axiosClient.post('/surveys/', formSchema);
+
+    // Try accessing the link and qr_code directly from 'response'
+    console.log("Response from server:", response); // Look at this in your console!
+
+    setPublishedLink(response.link);
+    setQrCodeData(response.qr_code); 
+    
+    setIsPublished(true);
+  } catch (error) {
+    console.error("Error publishing form:", error);
+    alert("Failed to publish form. Please check your backend.");
   }
+}
 
   return (
     <div className="max-w-4xl mx-auto pb-12">
@@ -271,13 +311,13 @@ const FormBuilderPage = () => {
 
               <div className="text-center bg-white p-4 rounded-lg border border-green-200">
                 <p className="text-xs font-semibold text-gray-500 mb-2">QR Code</p>
-                {/* 
-                  Hackathon Tip: Once you install qrcode.react, replace this div with:
-                  <QRCodeCanvas value={publishedLink} size={128} className="mx-auto" />
-                */}
-                <div className="w-32 h-32 bg-gray-200 mx-auto flex items-center justify-center border-4 border-white shadow-sm rounded">
-                  <span className="text-[10px] text-gray-400">Mock QR</span>
-                </div>
+                {qrCodeData ? (
+                  <QRCodeDisplay base64QrCode={qrCodeData} />
+                ) : (
+                  <div className="w-32 h-32 bg-gray-200 mx-auto flex items-center justify-center border-4 border-white shadow-sm rounded">
+                    <span className="text-[10px] text-gray-400">Loading...</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
