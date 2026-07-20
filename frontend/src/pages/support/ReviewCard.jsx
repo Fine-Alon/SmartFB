@@ -8,8 +8,8 @@ const ReviewCard = ({ review, onResolve }) => {
 
   const { id, ai_analysis, original_answers, created_at } = review
 
-  // Visuals based on sentiment
-  const isCritical = ai_analysis.sentiment_score <= 2
+  // Visuals based on urgency
+  const isCritical = review.is_urgent
   const badgeColor = isCritical ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"
   const iconColor = isCritical ? "text-red-500" : "text-orange-500"
 
@@ -47,10 +47,12 @@ const ReviewCard = ({ review, onResolve }) => {
           </div>
 
           <h3 className="text-lg font-bold text-slate-800">{ai_analysis.summary}</h3>
-
-          <p className="text-sm font-medium text-slate-600">
-            Flagged for: <span className="text-slate-800">{ai_analysis.flag_reason}</span>
-          </p>
+          
+          {review.guest_email && (
+            <p className="text-sm font-medium text-slate-600">
+              User Email: <span className="text-slate-800">{review.guest_email}</span>
+            </p>
+          )}
 
           {/* Expandable Original Text */}
           <div className="pt-2">
@@ -63,8 +65,16 @@ const ReviewCard = ({ review, onResolve }) => {
             </button>
 
             {expanded && (
-              <div className="mt-3 p-4 bg-slate-50 rounded-lg border border-slate-100 text-sm text-slate-700 font-serif leading-relaxed animate-in slide-in-from-top-2 duration-200">
-                "{original_answers.feedback}"
+              <div className="mt-3 p-4 bg-slate-50 rounded-lg border border-slate-100 text-sm text-slate-700 font-serif leading-relaxed animate-in slide-in-from-top-2 duration-200 space-y-3">
+                {original_answers && Object.keys(original_answers).map((key, idx) => (
+                  <div key={idx} className="bg-white p-3 rounded shadow-sm border border-slate-200">
+                    <span className="block font-bold text-slate-700 text-xs uppercase mb-1">Q ID: {key}</span>
+                    <span className="block text-slate-900">{String(original_answers[key])}</span>
+                  </div>
+                ))}
+                {(!original_answers || Object.keys(original_answers).length === 0) && (
+                  <span className="text-slate-400 italic">No answers provided.</span>
+                )}
               </div>
             )}
           </div>

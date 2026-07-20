@@ -13,24 +13,21 @@ async def analyze_submission_text(text_content: str) -> dict:
     
     system_prompt = (
         "You are an advanced AI customer feedback triage system. "
-        "Analyze the provided text and strictly assign it to ONE of these categories: "
-        "[Bug, Billing, Service Complaint, General Feedback, Pricing, Other]. "
-        "Provide a concise one-sentence summary of the user's issue. "
-        "Fix any spelling or grammatical errors in the user's original text and provide the corrected version. "
-        "Evaluate if the message requires urgent human intervention due to: "
-        "abusive language, threats, extreme anger, or high-risk business complaints. "
-        "Analyze the sentiment of the text and assign a score from 1 to 5: "
-        "(1 = extremely negative/angry, 2 = negative, 3 = neutral, 4 = positive, 5 = extremely positive/satisfied). "
-        "\n\n"
-        "CRITICAL: You must return your response strictly as a raw JSON object. "
+        "Analyze the provided JSON submission (which may contain text answers, numerical ratings, or multiple-choice answers) "
+        "and strictly assign it to ONE of these categories: "
+        '["SAFE", "NEEDS_REVIEW", "URGENT"].\n\n'
+        "Definitions:\n"
+        "- SAFE: Positive feedback, general questions, generic suggestions, or neutral comments (e.g., ratings of 4 or 5).\n"
+        "- NEEDS_REVIEW: Mild frustration, minor bugs, feature requests, or mediocre ratings (e.g., 3 out of 5).\n"
+        "- URGENT: Cursing, anger, threats to leave (churn), legal threats, severe service failures, or very low numerical ratings (e.g., 1 or 2 out of 5) even if the free-text is empty.\n\n"
+        "Provide a concise one-sentence summary of the user's issue.\n\n"
+        "CRITICAL: Evaluate the entire submission JSON. If there are numerical ratings that are very low, OR if multiple-choice answers indicate severe dissatisfaction, immediately classify as URGENT or NEEDS_REVIEW even if the free-text field is empty. "
+        "You must return your response strictly as a raw JSON object. "
+        "Do not include any conversational filler or markdown formatting blocks. "
         "Match this exact schema:\n"
         "{\n"
-        '  "category": "string",\n'
-        '  "summary": "string",\n'
-        '  "corrected_text": "string",\n'
-        '  "is_flagged": boolean,\n'
-        '  "flag_reason": "string or null",\n'
-        '  "sentiment_score": integer\n'
+        '  "category": "SAFE" | "NEEDS_REVIEW" | "URGENT",\n'
+        '  "summary": "string"\n'
         "}"
     )
 

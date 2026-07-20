@@ -1,110 +1,149 @@
-import React, { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import axiosClient from "../api/axiosClient"
-import { API_ENDPOINTS } from "../api/apiConfig"
+import React, { useEffect } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { fetchDashboardStats } from "../store/slices/dashboardSlice"
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from "recharts"
 
 const DashboardPage = () => {
-  const [metrics, setMetrics] = useState({
-    total_submissions: 0,
-    auto_categorized: 0,
-    pending_review: 0,
-    active_forms: 0,
-  })
-  
+  const dispatch = useDispatch()
+  const { stats, isLoading, error } = useSelector(state => state.dashboard)
+  const { user } = useSelector(state => state.auth)
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await axiosClient.get(API_ENDPOINTS.ANALYTICS.GET_GLOBAL_STATS)
-        setMetrics(response)
-      } catch (err) {
-        console.error("Failed to fetch dashboard metrics", err)
-      }
-    }
-    fetchStats()
-  }, [])
+    dispatch(fetchDashboardStats())
+  }, [dispatch])
+
+  // Map category distribution names to match chart colors
+  const categoryColors = {
+    SAFE: "#10b981",         // Emerald
+    NEEDS_REVIEW: "#f59e0b", // Amber
+    URGENT: "#f43f5e",       // Rose
+    UNKNOWN: "#6b7280"       // Gray
+  }
+
+  const pieData = stats.ai_category_distribution.map(item => ({
+    name: item.category,
+    value: item.count,
+    color: categoryColors[item.category] || categoryColors.UNKNOWN
+  }))
+
+  const barData = stats.submissions_over_time
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto pb-12">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Welcome back, Admin! 👋</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.username || "User"}! 👋</h1>
         <p className="text-gray-500 mt-1">Here is what is happening with your customer feedback today.</p>
       </div>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-sm font-medium text-gray-500 mb-1">Total Submissions</p>
-          <p className="text-3xl font-bold text-gray-900">{metrics.total_submissions}</p>
-        </div>
+      {isLoading ? (
+        <div className="text-center py-20 text-gray-500">Loading metrics...</div>
+      ) : error ? (
+        <div className="text-center py-20 text-red-500">Error: {error}</div>
+      ) : (
+        <>
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <p className="text-sm font-medium text-gray-500 mb-1">Total Submissions</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.total_submissions}</p>
+            </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-sm font-medium text-gray-500 mb-1">Active Forms</p>
-          <p className="text-3xl font-bold text-gray-900">{metrics.active_forms}</p>
-        </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <p className="text-sm font-medium text-gray-500 mb-1">Active Forms</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.active_forms}</p>
+            </div>
 
-        <div className="bg-green-50 p-6 rounded-xl shadow-sm border border-green-100">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-green-800">🟢 AI Auto-Resolved</p>
+            <div className="bg-green-50 p-6 rounded-xl shadow-sm border border-green-100">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm font-medium text-green-800">🟢 AI Auto-Resolved</p>
+              </div>
+              <p className="text-3xl font-bold text-green-900">{stats.auto_categorized}</p>
+              <p className="text-xs text-green-700 mt-1">Standard feedback handled safely</p>
+            </div>
+
+            <div className="bg-red-50 p-6 rounded-xl shadow-sm border border-red-100">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm font-medium text-red-800">🔴 Requires Human Review</p>
+              </div>
+              <p className="text-3xl font-bold text-red-900">{stats.pending_review}</p>
+              <p className="text-xs text-red-700 mt-1">Threats or extreme content flagged</p>
+            </div>
           </div>
-          <p className="text-3xl font-bold text-green-900">{metrics.auto_categorized}</p>
-          <p className="text-xs text-green-700 mt-1">Standard feedback handled safely</p>
-        </div>
 
-        <div className="bg-red-50 p-6 rounded-xl shadow-sm border border-red-100">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-red-800">🔴 Requires Human Review</p>
-          </div>
-          <p className="text-3xl font-bold text-red-900">{metrics.pending_review}</p>
-          <p className="text-xs text-red-700 mt-1">Threats or extreme content flagged</p>
-        </div>
-      </div>
+          {/* Charts Section */}
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Analytics Overview</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Pie Chart: Category Distribution */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-96 flex flex-col">
+              <h3 className="text-md font-bold text-gray-700 mb-4">AI Category Breakdown</h3>
+              {pieData.length > 0 ? (
+                <div className="flex-grow">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No categorical data available
+                </div>
+              )}
+            </div>
 
-      {/* Quick Actions Hub */}
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Action: Form Builder */}
-        <Link
-          to="/form-builder"
-          className="group block bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all"
-        >
-          <div className="h-12 w-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              />
-            </svg>
+            {/* Bar Chart: Submissions Over Time */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-96 flex flex-col">
+              <h3 className="text-md font-bold text-gray-700 mb-4">Submissions Over Time</h3>
+              {barData.length > 0 ? (
+                <div className="flex-grow">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={barData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="date" tick={{fontSize: 12}} />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No submission timeline data available
+                </div>
+              )}
+            </div>
+            
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Create New Form</h3>
-          <p className="text-gray-500 text-sm">
-            Build dynamic questionnaires, customize fields, and generate shareable links and QR codes.
-          </p>
-        </Link>
-
-        {/* Action: Feedback Queue */}
-        <Link
-          to="/feedbacks"
-          className="group block bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:border-red-500 hover:shadow-md transition-all"
-        >
-          <div className="h-12 w-12 bg-red-100 text-red-600 rounded-lg flex items-center justify-center mb-4 group-hover:bg-red-600 group-hover:text-white transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Review Pending Feedbacks</h3>
-          <p className="text-gray-500 text-sm">
-            Check the AI triage queue for urgent issues, threats, and feedback that requires your immediate attention.
-          </p>
-        </Link>
-      </div>
+        </>
+      )}
     </div>
   )
 }

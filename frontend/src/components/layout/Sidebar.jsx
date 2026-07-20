@@ -1,7 +1,9 @@
 import React from "react"
 import { NavLink } from "react-router-dom"
+import { useSelector } from "react-redux"
 
 const Sidebar = () => {
+  const { user } = useSelector(state => state.auth)
   // Navigation items array for easy mapping
   const navItems = [
     {
@@ -94,14 +96,16 @@ const Sidebar = () => {
       <div className="p-4 border-t border-gray-100">
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="relative">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-sm">
-              C
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-sm uppercase">
+              {user?.email ? user.email.charAt(0) : "U"}
             </div>
             <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-900">Chaim</p>
-            <p className="text-xs text-gray-500">Super Admin</p>
+          <div className="overflow-hidden">
+            <p className="text-sm font-medium text-gray-900 truncate" title={user?.email || "User"}>
+              {user?.email || "User"}
+            </p>
+            <p className="text-xs text-gray-500 truncate">{user?.role || "Super Admin"}</p>
           </div>
         </div>
       </div>

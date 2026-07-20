@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react"
-import { useSelector } from "react-redux"
 import { AlertTriangle, CheckCircle, Search, Loader2 } from "lucide-react"
 import ReviewCard from "./ReviewCard"
+import axiosClient from "../../api/axiosClient"
+import { API_ENDPOINTS } from "../../api/apiConfig"
 
 const ReviewQueue = () => {
   const [reviews, setReviews] = useState([])
@@ -9,86 +10,36 @@ const ReviewQueue = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notification, setNotification] = useState(null)
 
-  // const token = useSelector((state) => state.auth?.token);
+  const fetchQueue = async () => {
+    setIsLoading(true)
+    try {
+      const data = await axiosClient.get(API_ENDPOINTS.REVIEWS.GET_QUEUE)
+      setReviews(data)
+    } catch (error) {
+      console.error("Failed to fetch queue:", error)
+      setNotification("Failed to load the review queue.")
+      setTimeout(() => setNotification(null), 3000)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
-    // Mocking the GET /reviews/queue endpoint
-    const fetchQueue = async () => {
-      setIsLoading(true)
-      try {
-        // In reality:
-        // const response = await fetch('/api/reviews/queue', { headers: { Authorization: `Bearer ${token}` } });
-        // const data = await response.json();
-
-        // Mock data delay
-        await new Promise(resolve => setTimeout(resolve, 800))
-
-        const mockData = [
-          {
-            id: "101",
-            original_answers: {
-              feedback: "This is absolutely the worst experience I've ever had. No one responds and the product is broken!",
-            },
-            ai_analysis: {
-              category: "Severe Complaint",
-              summary: "User is extremely frustrated with product quality and support.",
-              is_flagged: true,
-              flag_reason: "High anger, mentions broken product",
-              sentiment_score: 1,
-            },
-            status: "pending_human_review",
-            created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
-          },
-          {
-            id: "102",
-            original_answers: {
-              feedback: "I am feeling very threatened by the recent changes to my account without my permission.",
-            },
-            ai_analysis: {
-              category: "Security/Safety",
-              summary: "User feels threatened regarding account security.",
-              is_flagged: true,
-              flag_reason: "Mentions 'threatened' and unauthorized changes",
-              sentiment_score: 2,
-            },
-            status: "pending_human_review",
-            created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2 hours ago
-          },
-        ]
-
-        setReviews(mockData)
-      } catch (error) {
-        console.error("Failed to fetch queue", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
     fetchQueue()
   }, [])
 
   const handleResolve = async (id, notes) => {
     setIsSubmitting(true)
     try {
-      // In reality:
-      // await fetch(`/api/reviews/${id}/resolve`, {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      //   body: JSON.stringify({ reviewer_notes: notes })
-      // });
-
-      // Mock submit delay
-      await new Promise(resolve => setTimeout(resolve, 600))
-
-      // Update local state
-      setReviews(current => current.filter(r => r.id !== id))
-
-      // Show success toast
-      setNotification("Review successfully resolved and removed from queue.")
+      await axiosClient.patch(API_ENDPOINTS.REVIEWS.RESOLVE(id), { reviewer_notes: notes })
+      
+      setReviews(prev => prev.filter(r => r.id !== id))
+      setNotification("Review resolved successfully.")
       setTimeout(() => setNotification(null), 3000)
     } catch (error) {
-      console.error("Failed to resolve", error)
-      alert("Failed to submit resolution. Please try again.")
+      console.error("Resolution failed:", error)
+      setNotification("Failed to resolve the review. Please try again.")
+      setTimeout(() => setNotification(null), 3000)
     } finally {
       setIsSubmitting(false)
     }

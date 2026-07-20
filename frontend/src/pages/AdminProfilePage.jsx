@@ -90,10 +90,12 @@ const AdminProfilePage = () => {
         <div className="md:col-span-1">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
             <div className="h-24 w-24 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <span className="text-3xl text-blue-600 font-bold">{user?.name?.charAt(0) || "U"}</span>
+              <span className="text-3xl text-blue-600 font-bold uppercase">
+                {user?.username?.[0] || user?.email?.[0] || "U"}
+              </span>
             </div>
-            <h2 className="text-xl font-semibold text-gray-800">{user?.name || "Unknown User"}</h2>
-            <p className="text-sm text-gray-500 mb-4">{user?.role || "Admin"}</p>
+            <h2 className="text-xl font-semibold text-gray-800">{user?.username || "User"}</h2>
+            <p className="text-sm text-gray-500 mb-4">{user?.role || "admin"}</p>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
               Active Account
             </span>

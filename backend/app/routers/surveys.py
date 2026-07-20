@@ -30,7 +30,7 @@ async def create_survey(
     db = get_database()
 
     survey_dict = payload.model_dump()
-    survey_dict["created_by"] = admin_id
+    survey_dict["owner_id"] = admin_id
 
     # 1. Create the survey in DB
     new_survey = await db_create_survey(db, survey_dict)
@@ -76,9 +76,10 @@ async def get_survey(survey_id: str):
 
 
 @router.get("/", response_model=List[SurveyOut])
-async def list_surveys():
+async def list_surveys(user_data: tuple = Depends(require_admin)):
     """
-    Lists all active surveys available.
+    Lists all active surveys available for the logged-in admin.
     """
+    admin_id, role = user_data
     db = get_database()
-    return await db_get_all_surveys(db)
+    return await db_get_all_surveys(db, admin_id)

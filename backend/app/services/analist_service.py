@@ -137,11 +137,37 @@ async def get_global_statistics() -> dict:
     
     active_forms = await db.surveys.count_documents({"is_active": True})
 
+    # Category breakdown for Pie Chart
+    category_pipeline = [
+        {"$group": {"_id": "$ai_analysis.category", "count": {"$sum": 1}}}
+    ]
+    category_cursor = await db.submissions.aggregate(category_pipeline)
+    category_distribution = []
+    async for doc in category_cursor:
+        cat_name = doc.get("_id") or "UNKNOWN"
+        category_distribution.append({"category": cat_name, "count": doc["count"]})
+
+    # Submissions over time for Line/Area Chart (last 30 days or all time)
+    time_pipeline = [
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    time_cursor = await db.submissions.aggregate(time_pipeline)
+    submissions_over_time = []
+    async for doc in time_cursor:
+        if doc.get("_id"):
+            submissions_over_time.append({"date": doc["_id"], "count": doc["count"]})
+
     return {
         "total_submissions": total_submissions,
         "auto_categorized": auto_categorized,
         "pending_review": pending_review,
-        "active_forms": active_forms
+        "active_forms": active_forms,
+        "ai_category_distribution": category_distribution,
+        "submissions_over_time": submissions_over_time
     }
 
 async def get_all_reviews() -> list[dict]:

@@ -39,8 +39,8 @@ async def db_get_survey_by_id(db: AsyncDatabase, survey_id: str) -> Optional[Dic
     return survey
 
 
-async def db_get_all_surveys(db: AsyncDatabase) -> List[Dict[str, Any]]:
-    surveys = await db["surveys"].find().to_list(100)
+async def db_get_all_surveys(db: AsyncDatabase, admin_id: str) -> List[Dict[str, Any]]:
+    surveys = await db["surveys"].find({"owner_id": admin_id}).to_list(100)
     for survey in surveys:
         survey["_id"] = str(survey["_id"])
     return surveys

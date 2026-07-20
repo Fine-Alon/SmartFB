@@ -5,6 +5,7 @@ import authReducer from "./slices/authSlice"
 import feedbackSlice from "./slices/feedbackSlice"
 import uiReducer from "./slices/uiSlice"
 import queueReducer from "./slices/queueSlice"
+import dashboardReducer from "./slices/dashboardSlice"
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     feedbacks: feedbackSlice,
     queue: queueReducer,
     ui: uiReducer,
+    dashboard: dashboardReducer,
   },
 })
