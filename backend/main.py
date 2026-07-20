@@ -2,15 +2,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.db import connect_to_mongo, close_mongo_connection
+from app.api import auth
+from app.routers import customer
+
 
 # Lifespan context manager handles DB connection on startup & shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Runs when FastAPI starts up
-    await connect_to_mongo()
+    connect_to_mongo()
     yield
-    # Runs when FastAPI shuts down
-    await close_mongo_connection()
+    close_mongo_connection()
+
 
 # Pass lifespan into FastAPI
 app = FastAPI(title="SmartFB API", lifespan=lifespan)
@@ -28,4 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# You can add your routers below (e.g., auth, customer, forms)
+# Register routers
+app.include_router(auth.router)
+app.include_router(customer.router, prefix="/customers", tags=["customers"])
+

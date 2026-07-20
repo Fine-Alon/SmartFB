@@ -1,19 +1,3 @@
-<<<<<<< HEAD
-from pydantic import BaseModel, Field
-from typing import Optional
-
-
-class UserRegister(BaseModel):
-    """Payload for registering a new user."""
-    username: str = Field(..., min_length=2, description="Username must contain at least 2 characters")
-    password: str = Field(..., min_length=4, description="Password must contain at least 4 characters")
-    role: str = Field(default="support")
-
-class UserLogin(BaseModel):
-    """Payload for user authentication credentials."""
-    username: str = Field(..., min_length=2)
-    password: str = Field(..., min_length=4)
-=======
 """
 API-facing schemas for users and auth. Kept separate from the DB model
 (models/user.py) so hashed_password can never leak into a response.
@@ -37,22 +21,26 @@ class UserRole(str, Enum):
 # ---- User ----
 
 class UserCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
+    username: str = Field(min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_]+$', description="Alphanumeric and underscores only")
+    password: str = Field(min_length=4, max_length=128)
+    name: Optional[str] = Field(None, max_length=100)
+    email: Optional[EmailStr] = None
+    telegram_id: Optional[str] = None
     role: UserRole = UserRole.CUSTOMER  # adjust if registration should default elsewhere
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    username: str = Field(min_length=3)
     password: str
 
 
 class UserOut(BaseModel):
     """Safe user representation returned by the API — never includes the password."""
     id: str
-    name: str
-    email: EmailStr
+    username: str
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    telegram_id: Optional[str] = None
     role: UserRole
     is_active: bool
     created_at: datetime
@@ -70,6 +58,8 @@ class UserOut(BaseModel):
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    telegram_id: Optional[str] = None
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
 
@@ -85,4 +75,3 @@ class TokenPayload(BaseModel):
     sub: str  # user id
     role: str
     exp: int
->>>>>>> main

@@ -3,14 +3,9 @@ from fastapi import Depends, Request, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 from datetime import datetime, timedelta, timezone
-import os
-from dotenv import load_dotenv
+from app.core.config import settings
 
-load_dotenv()
 safe = HTTPBearer(auto_error=False)
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
 def hash_password (password)  :
     bytes_password = password.encode('utf-8')
@@ -24,19 +19,19 @@ def verify_password (stored_hash,check_password) :
     return bcrypt.checkpw(bytes_password,bytes_hash)
       
 def create_token (user_id,role) :
-    expire_time = datetime.now(timezone.utc) + timedelta(minutes=30)       
+    expire_time = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)       
     payload = {
         "sub" : str(user_id),
         "exp" : expire_time ,
         "role" : role
     }
-    token = jwt.encode(payload,SECRET_KEY,ALGORITHM)
+    token = jwt.encode(payload, settings.SECRET_KEY, settings.ALGORITHM)
     return token
     
 
 def verify_token (token:str) :
     try :
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
 
     except jwt.ExpiredSignatureError:
@@ -76,5 +71,5 @@ class RoleChecker:
         return user_id, role
 
 require_admin = RoleChecker(["admin"])
-require_support = RoleChecker(["support"])
+require_support = RoleChecker(["support_employee", "support"])
 
