@@ -60,9 +60,8 @@ const FeedbackPage = () => {
             <button
               key={f}
               onClick={() => dispatch(setFilter(f))}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeFilter === f ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeFilter === f ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+                }`}
             >
               {f}
             </button>
@@ -175,31 +174,31 @@ const FeedbackPage = () => {
                   <span className="bg-white px-2 py-1 rounded shadow-sm">
                     Category: <b>{selectedFeedback.ai_analysis?.category || "Unknown"}</b>
                   </span>
-                  <span className="bg-white px-2 py-1 rounded shadow-sm">
-                    Sentiment: <b>{selectedFeedback.ai_analysis?.sentiment_score ?? "N/A"}</b>
-                  </span>
                 </div>
-                {selectedFeedback.ai_analysis?.flag_reason && (
-                  <div className="mt-3 text-sm text-red-700 bg-red-100 px-3 py-2 rounded">
-                    <b>Flagged Reason:</b> {selectedFeedback.ai_analysis.flag_reason}
-                  </div>
-                )}
               </div>
 
               {/* Raw Message Block */}
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Original Customer Message</h3>
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-800 whitespace-pre-wrap">
-                  {JSON.stringify(selectedFeedback.original_answers, null, 2)}
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Original Customer Answers</h3>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-800 space-y-3">
+                  {selectedFeedback.original_answers && Object.keys(selectedFeedback.original_answers).map((key, idx) => (
+                    <div key={idx} className="bg-white p-3 rounded shadow-sm border border-gray-100">
+                      <span className="block font-bold text-gray-700 text-xs uppercase mb-1">Q ID: {key}</span>
+                      <span className="block text-gray-900">{String(selectedFeedback.original_answers[key])}</span>
+                    </div>
+                  ))}
+                  {(!selectedFeedback.original_answers || Object.keys(selectedFeedback.original_answers).length === 0) && (
+                    <span className="text-gray-400 italic">No answers provided.</span>
+                  )}
                 </div>
               </div>
 
               <div className="mt-6 border-t pt-6">
                 <h3 className="text-sm font-medium text-gray-500 mb-3">Survey QR Code</h3>
                 {selectedFeedback.qr_code ? (
-                  <QRCodeDisplay 
-                    base64QrCode={selectedFeedback.qr_code} 
-                    title="Customer Feedback QR" 
+                  <QRCodeDisplay
+                    base64QrCode={selectedFeedback.qr_code}
+                    title="Customer Feedback QR"
                   />
                 ) : (
                   <p className="text-sm text-gray-400 italic">No QR code available for this feedback.</p>

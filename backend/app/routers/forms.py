@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Dict, Any
 from datetime import datetime, timezone
 from ..services.ai_service import analyze_submission_text
@@ -8,6 +8,7 @@ from ..core.db import get_database
 router = APIRouter(prefix="/submissions", tags=["Submissions"])
 
 class SubmissionCreate(BaseModel):
+    guest_email: EmailStr
     answers: Dict[str, Any]
 
 @router.post("/{form_id}", status_code=status.HTTP_201_CREATED)
@@ -19,31 +20,34 @@ async def submit_feedback(form_id: str, submission: SubmissionCreate):
     
     db = get_database()
     
-    # 2. איסוף כל התשובות הטקסטואליות כדי שה-AI ינתח אותן כבלוק אחד
-    text_values = [str(val) for val in submission.answers.values() if isinstance(val, str)]
-    full_text = " ".join(text_values)
+    import json
     
-    if not full_text.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="הטופס ריק או לא מכיל טקסט לניתוח"
-        )
-
+    # 2. Convert the entire answers dictionary to a JSON string for the AI
+    full_text = json.dumps(submission.answers, ensure_ascii=False)
+    
     # 3. הפעלת מנוע ה-AI (Ollama)
     ai_result = await analyze_submission_text(full_text)
     
     # 4. לוגיקת ניתוב (Routing) לפי החלטת ה-AI
-    if ai_result.get("is_flagged") is True:
-        submission_status = "pending_human_review"  # עובר לתור המאובטח של העובדים
+    ai_category = ai_result.get("category", "SAFE")
+    
+    is_urgent = False
+    if ai_category == "URGENT":
+        submission_status = "pending_human_review"
+        is_urgent = True
+    elif ai_category == "NEEDS_REVIEW":
+        submission_status = "pending_human_review"
     else:
-        submission_status = "auto_processed"        # נסגר אוטומטית וממתין לסטטיסטיקות
+        submission_status = "auto_processed"
         
     # 5. הכנת הדוקומנט המלא לשמירה במונגו
     new_submission = {
         "form_id": form_id,
+        "guest_email": submission.guest_email,
         "original_answers": submission.answers,
-        "ai_analysis": ai_result,  # מכיל קטגוריה, סיכום, טקסט מתוקן וסיבת דגל
+        "ai_analysis": ai_result,
         "status": submission_status,
+        "is_urgent": is_urgent,
         "created_at": datetime.now(timezone.utc),
         "reviewer_notes": None,
         "resolved_at": None

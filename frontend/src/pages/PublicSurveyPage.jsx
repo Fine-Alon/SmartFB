@@ -9,6 +9,7 @@ const PublicSurveyPage = () => {
   const [error, setError] = useState(null)
 
   const [formConfig, setFormConfig] = useState(null) // form setting, that come from backend
+  const [guestEmail, setGuestEmail] = useState("")
   const [answers, setAnswers] = useState({}) // Guest answers
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -67,6 +68,7 @@ const PublicSurveyPage = () => {
 
     try {
       await axiosClient.post(`/submissions/${formId}`, {
+        guest_email: guestEmail,
         answers: answers
       })
       setIsSubmitted(true) // Show thankful message
@@ -124,6 +126,21 @@ const PublicSurveyPage = () => {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-8">
           <p className="text-gray-600 text-sm text-center -mt-2 mb-6">{formConfig.description}</p>
+
+          {/* Mandatory Email Field */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-800">
+              Email Address <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              required
+              placeholder="your@email.com"
+              value={guestEmail}
+              onChange={e => setGuestEmail(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
+            />
+          </div>
 
           {/* Dynamic rendering of fields (based on JSON from backend) */}
           {formConfig.questions && formConfig.questions.map(field => (
