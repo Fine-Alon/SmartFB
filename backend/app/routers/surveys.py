@@ -1,16 +1,16 @@
 from typing import List
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from app.core.db import get_database
-from app.schema.survey_schema import SurveyCreate, SurveyOut
-from app.CRUD.survey_crud import (
+from ..core.db import get_database
+from ..schema.survey_schema import SurveyCreate, SurveyOut
+from ..CRUD.survey_crud import (
     db_create_survey,
     db_get_survey_by_id,
     db_get_all_surveys,
 )
-from app.core.security import require_admin
+from ..core.security import require_admin
 
-router = APIRouter()
+router = APIRouter(prefix="/surveys", tags=["Surveys"])
 
 
 @router.post("/", response_model=SurveyOut, status_code=status.HTTP_201_CREATED)
