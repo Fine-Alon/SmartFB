@@ -4,11 +4,13 @@ import { configureStore } from "@reduxjs/toolkit"
 import authReducer from "./slices/authSlice"
 import feedbackSlice from "./slices/feedbackSlice"
 import uiReducer from "./slices/uiSlice"
+import queueReducer from "./slices/queueSlice"
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    tickets: feedbackSlice,
+    feedbacks: feedbackSlice,
+    queue: queueReducer,
     ui: uiReducer,
   },
 })

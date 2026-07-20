@@ -1,38 +1,46 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
+import axiosClient from "../../api/axiosClient"
 
-const initialState = {
-  items: [], // The array of feedback submissions
-  isLoading: false,
-  error: null,
-}
+export const submitEssay = createAsyncThunk("feedback/submitEssay", async (essayText, { rejectWithValue }) => {
+  try {
+    // send the object with the field - essay_text
+    const response = await axiosClient.post("/api/essays/analyze", {
+      essay_text: essayText,
+    })
+    return response.data // get results from the backend
+  } catch (error) {
+    return rejectWithValue(error.response?.data || "feedback analyze error")
+  }
+})
 
 const feedbackSlice = createSlice({
-  name: "feedback", // Changed from 'tickets'
-  initialState,
+  name: "feedback",
+  initialState: {
+    analysisResult: null,
+    isLoading: false,
+    error: null,
+  },
   reducers: {
-    setLoading: (state, action) => {
-      state.isLoading = action.payload
+    clearFeedback: state => {
+      state.analysisResult = null
     },
-    setFeedback: (state, action) => {
-      // Changed from setTickets
-      state.items = action.payload
-      state.isLoading = false
-      state.error = null
-    },
-    setError: (state, action) => {
-      state.error = action.payload
-      state.isLoading = false
-    },
-    resolveFeedback: (state, action) => {
-      // Changed from resolveTicket
-      const feedbackId = action.payload
-      const index = state.items.findIndex(f => f.id === feedbackId)
-      if (index !== -1) {
-        state.items[index].status = "resolved"
-      }
-    },
+  },
+  extraReducers: builder => {
+    builder
+      .addCase(submitEssay.pending, state => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(submitEssay.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.analysisResult = action.payload
+      })
+      .addCase(submitEssay.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload
+      })
   },
 })
 
-export const { setLoading, setFeedback, setError, resolveFeedback } = feedbackSlice.actions
+export const { clearFeedback } = feedbackSlice.actions
 export default feedbackSlice.reducer

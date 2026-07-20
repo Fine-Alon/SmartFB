@@ -1,32 +1,51 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
+import axiosClient from "../../api/axiosClient"
 
-const initialState = {
-  user: null, // e.g., { name: 'Chaim', email: 'chaim@smartfb.com' }
-  token: localStorage.getItem("token") || null,
-  isAuthenticated: !!localStorage.getItem("token"),
-}
+export const loginUser = createAsyncThunk("auth/loginUser", async (credentials, { rejectWithValue }) => {
+  try {
+    // refresh JSON obj (username, password)
+    const response = await axiosClient.post("/api/auth/login", credentials)
+    return response.data // returns user data (id, username)
+  } catch (error) {
+    return rejectWithValue(error.response?.data || "authorization error")
+  }
+})
+
+// TODO: убрать мок перед деплоем ВРЕМЕННЫЙ МОК ДЛЯ РАЗРАБОТКИ (Убрать, когда будет готов бэкенд!)
 
 const authSlice = createSlice({
   name: "auth",
-  initialState,
-  reducers: {
-    loginSuccess: (state, action) => {
-      state.user = action.payload.user
-      state.token = action.payload.token
-      state.isAuthenticated = true
-      localStorage.setItem("token", action.payload.token)
+  initialState: {
+    user: {
+      id: 1,
+      username: "Chaim",
+      email: "chaim@smartfb.com",
+      role: "admin", // "support"
     },
+    isLoading: false,
+    error: null,
+  },
+  reducers: {
     logout: state => {
       state.user = null
-      state.token = null
-      state.isAuthenticated = false
-      localStorage.removeItem("token")
     },
-    updateProfile: (state, action) => {
-      state.user = { ...state.user, ...action.payload }
-    },
+  },
+  extraReducers: builder => {
+    builder
+      .addCase(loginUser.pending, state => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.user = action.payload
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload
+      })
   },
 })
 
-export const { loginSuccess, logout, updateProfile } = authSlice.actions
+export const { logout } = authSlice.actions
 export default authSlice.reducer
