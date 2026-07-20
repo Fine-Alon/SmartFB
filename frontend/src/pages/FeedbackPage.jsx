@@ -1,62 +1,33 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { fetchFeedbacks, setFilter, updateFeedbackStatus } from "../store/slices/queueSlice"
 
 const FeedbackPage = () => {
-  // Mock data representing the Tickets from your backend
-  const [tickets, setTickets] = useState([
-    {
-      id: "TKT-001",
-      date: "2026-07-20",
-      customer: "John Doe",
-      contact: "john@example.com",
-      status: "requires_human_review",
-      aiCategory: "Complaint",
-      aiSentiment: "Negative",
-      aiSummary: "Customer is extremely angry about a billing error and is threatening legal action.",
-      flagReason: "Legal threat and abusive language detected",
-      rawText: "You guys charged me twice! I demand a refund immediately or I will sue you. Your support is garbage!",
-    },
-    {
-      id: "TKT-002",
-      date: "2026-07-19",
-      customer: "Sarah Smith",
-      contact: "sarah@example.com",
-      status: "auto_categorized",
-      aiCategory: "Feature Request",
-      aiSentiment: "Positive",
-      aiSummary: "Customer is requesting a dark mode feature for the mobile app.",
-      flagReason: null,
-      rawText: "I love using your platform, but it would be amazing if you could add a dark mode for nighttime reading. Thanks!",
-    },
-    {
-      id: "TKT-003",
-      date: "2026-07-19",
-      customer: "Mike Johnson",
-      contact: "mike@example.com",
-      status: "requires_human_review",
-      aiCategory: "Support Request",
-      aiSentiment: "Neutral",
-      aiSummary: "Customer server is down and they are losing revenue. High urgency.",
-      flagReason: "Urgent system outage reported",
-      rawText:
-        "My production server just went down and I cannot access any of my files. We are losing money every minute this is offline. Help ASAP!",
-    },
-  ])
+  const dispatch = useDispatch()
 
-  const [filter, setFilter] = useState("All")
-  const [selectedTicket, setSelectedTicket] = useState(null)
+  const { feedbacks, isLoading, error, activeFilter } = useSelector(state => state.queue)
 
-  // Filter Logic
-  const filteredTickets = tickets.filter(ticket => {
-    if (filter === "Requires Review") return ticket.status === "requires_human_review"
-    if (filter === "Auto-Resolved") return ticket.status === "auto_categorized"
+  //  Manage opened modal window
+  const [selectedFeedback, setSelectedFeedback] = useState(null)
+
+  useEffect(() => {
+    dispatch(fetchFeedbacks())
+  }, [dispatch])
+
+  const filteredFeedbacks = feedbacks.filter(feedback => {
+    if (activeFilter === "Requires Review") return feedback.status === "requires_human_review"
+    if (activeFilter === "Auto-Resolved") return feedback.status === "auto_categorized"
     return true
   })
 
-  // Action Handlers
   const handleResolve = id => {
-    setTickets(tickets.map(t => (t.id === id ? { ...t, status: "resolved" } : t)))
-    setSelectedTicket(null)
+    dispatch(updateTicketStatus({ ticketId: id, newStatus: "resolved" }))
+    setSelectedFeedback(null) // Close model window.
   }
+
+  // Loading in handler
+  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading feedbacks...</div>
+  if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -64,7 +35,7 @@ const FeedbackPage = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Feedback Queue</h1>
-          <p className="text-gray-500 mt-1">Review AI-processed submissions and handle flagged tickets.</p>
+          <p className="text-gray-500 mt-1">Review AI-processed submissions and handle flagged feedbacks.</p>
         </div>
 
         {/* Filter Buttons */}
@@ -72,9 +43,10 @@ const FeedbackPage = () => {
           {["All", "Requires Review", "Auto-Resolved"].map(f => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              // Switch filters by Redux dispatch
+              onClick={() => dispatch(setFilter(f))}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === f ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+                activeFilter === f ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
               }`}
             >
               {f}
@@ -83,7 +55,7 @@ const FeedbackPage = () => {
         </div>
       </div>
 
-      {/* Tickets Table */}
+      {/* Feedbacks Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
@@ -97,7 +69,7 @@ const FeedbackPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredTickets.map(ticket => (
+              {filteredFeedbacks.map(ticket => (
                 <tr key={ticket.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900">{ticket.id}</div>
@@ -127,16 +99,16 @@ const FeedbackPage = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button onClick={() => setSelectedTicket(ticket)} className="text-blue-600 hover:text-blue-800 font-medium">
+                    <button onClick={() => setSelectedFeedback(ticket)} className="text-blue-600 hover:text-blue-800 font-medium">
                       View Details
                     </button>
                   </td>
                 </tr>
               ))}
-              {filteredTickets.length === 0 && (
+              {filteredFeedbacks.length === 0 && (
                 <tr>
                   <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                    No tickets found for this filter.
+                    No feedbacks found for this filter.
                   </td>
                 </tr>
               )}
@@ -146,18 +118,18 @@ const FeedbackPage = () => {
       </div>
 
       {/* Ticket Details Modal */}
-      {selectedTicket && (
+      {selectedFeedback && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Ticket {selectedTicket.id}</h2>
+                <h2 className="text-xl font-bold text-gray-900">Ticket {selectedFeedback.id}</h2>
                 <p className="text-sm text-gray-500">
-                  From: {selectedTicket.customer} ({selectedTicket.contact})
+                  From: {selectedFeedback.customer} ({selectedFeedback.contact})
                 </p>
               </div>
-              <button onClick={() => setSelectedTicket(null)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setSelectedFeedback(null)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -168,7 +140,7 @@ const FeedbackPage = () => {
             <div className="p-6 space-y-6">
               {/* AI Analysis Block */}
               <div
-                className={`p-4 rounded-lg border ${selectedTicket.status === "requires_human_review" ? "bg-red-50 border-red-100" : "bg-blue-50 border-blue-100"}`}
+                className={`p-4 rounded-lg border ${selectedFeedback.status === "requires_human_review" ? "bg-red-50 border-red-100" : "bg-blue-50 border-blue-100"}`}
               >
                 <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center">
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,19 +149,19 @@ const FeedbackPage = () => {
                   AI Analysis
                 </h3>
                 <p className="text-sm text-gray-800 mb-3">
-                  <span className="font-semibold">Summary:</span> {selectedTicket.aiSummary}
+                  <span className="font-semibold">Summary:</span> {selectedFeedback.aiSummary}
                 </p>
                 <div className="flex gap-3 text-xs">
                   <span className="bg-white px-2 py-1 rounded shadow-sm">
-                    Category: <b>{selectedTicket.aiCategory}</b>
+                    Category: <b>{selectedFeedback.aiCategory}</b>
                   </span>
                   <span className="bg-white px-2 py-1 rounded shadow-sm">
-                    Sentiment: <b>{selectedTicket.aiSentiment}</b>
+                    Sentiment: <b>{selectedFeedback.aiSentiment}</b>
                   </span>
                 </div>
-                {selectedTicket.flagReason && (
+                {selectedFeedback.flagReason && (
                   <div className="mt-3 text-sm text-red-700 bg-red-100 px-3 py-2 rounded">
-                    <b>Flagged Reason:</b> {selectedTicket.flagReason}
+                    <b>Flagged Reason:</b> {selectedFeedback.flagReason}
                   </div>
                 )}
               </div>
@@ -198,7 +170,7 @@ const FeedbackPage = () => {
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Original Customer Message</h3>
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-800 whitespace-pre-wrap">
-                  {selectedTicket.rawText}
+                  {selectedFeedback.rawText}
                 </div>
               </div>
             </div>
@@ -206,14 +178,14 @@ const FeedbackPage = () => {
             {/* Modal Footer */}
             <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-xl">
               <button
-                onClick={() => setSelectedTicket(null)}
+                onClick={() => setSelectedFeedback(null)}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 Close
               </button>
-              {selectedTicket.status === "requires_human_review" && (
+              {selectedFeedback.status === "requires_human_review" && (
                 <button
-                  onClick={() => handleResolve(selectedTicket.id)}
+                  onClick={() => handleResolve(selectedFeedback.id)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                 >
                   Mark as Resolved

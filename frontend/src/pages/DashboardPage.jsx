@@ -73,7 +73,7 @@ const DashboardPage = () => {
 
         {/* Action: Feedback Queue */}
         <Link
-          to="/tickets"
+          to="/feedbacks"
           className="group block bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:border-red-500 hover:shadow-md transition-all"
         >
           <div className="h-12 w-12 bg-red-100 text-red-600 rounded-lg flex items-center justify-center mb-4 group-hover:bg-red-600 group-hover:text-white transition-colors">
@@ -86,7 +86,7 @@ const DashboardPage = () => {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Review Pending Tickets</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">Review Pending Feedbacks</h3>
           <p className="text-gray-500 text-sm">
             Check the AI triage queue for urgent issues, threats, and feedback that requires your immediate attention.
           </p>

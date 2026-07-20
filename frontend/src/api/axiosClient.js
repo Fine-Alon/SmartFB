@@ -1,68 +1,34 @@
-import axios from 'axios';
+import axios from "axios"
 
-// Create an Axios instance
-// Uses Vite's environment variable, or defaults to standard FastAPI local port
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
+  // CRITICAL: This tells the browser to include the secure cookie in every request
+  withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-});
+})
 
-// ----------------------------------------------------------------
-// Request Interceptor
-// Automatically attaches the JWT token to the headers of every request
-// ----------------------------------------------------------------
-axiosClient.interceptors.request.use(
-  (config) => {
-    // Grab the token from localStorage (set during login)
-    const token = localStorage.getItem('token');
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// ----------------------------------------------------------------
-// Response Interceptor
-// Globally handles responses and common errors
-// ----------------------------------------------------------------
+// Response Interceptor - this for handling global errors like expiration
 axiosClient.interceptors.response.use(
-  (response) => {
-    // Return the response data directly to keep component code clean
-    return response.data;
+  response => {
+    return response.data
   },
-  (error) => {
-    const { response } = error;
-
+  error => {
+    const { response } = error
     if (response) {
-      // Handle 401 Unauthorized (Token expired or missing)
       if (response.status === 401) {
-        console.error('Unauthorized access - redirecting to login');
-        
-        // Clear local storage and redirect to login
-        localStorage.removeItem('token');
-        
-        // Uncomment this line when auth is fully implemented:
-        // window.location.href = '/login';
+        console.error("Unauthorized access - session expired")
+        // redirect to /login
+        // 1. Clear the frontend Redux state
+        store.dispatch(logout())
+
+        // 2. Force the browser to redirect to the login page
+        window.location.href = "/login"
       }
-      
-      // Handle 403 Forbidden (User doesn't have admin permissions)
-      if (response.status === 403) {
-        console.error('Forbidden - you do not have permission to perform this action');
-      }
-    } else {
-      console.error('Network Error - Is the FastAPI server running?');
     }
+    return Promise.reject(error)
+  },
+)
 
-    return Promise.reject(error);
-  }
-);
-
-export default axiosClient;
+export default axiosClient
