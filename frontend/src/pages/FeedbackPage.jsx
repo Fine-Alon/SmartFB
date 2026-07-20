@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { fetchFeedbacks, setFilter, updateFeedbackStatus } from "../store/slices/queueSlice"
+import QRCodeDisplay from "../components/common/QRCodeDisplay";
 
 const FeedbackPage = () => {
   const dispatch = useDispatch()
@@ -21,7 +22,7 @@ const FeedbackPage = () => {
   })
 
   const handleResolve = id => {
-    dispatch(updateTicketStatus({ ticketId: id, newStatus: "resolved" }))
+    dispatch(updateFeedbackStatus({ feedbackId: id, notes: "Resolved via dashboard" }))
     setSelectedFeedback(null) // Close model window.
   }
 
@@ -172,6 +173,18 @@ const FeedbackPage = () => {
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-800 whitespace-pre-wrap">
                   {selectedFeedback.rawText}
                 </div>
+              </div>
+
+              <div className="mt-6 border-t pt-6">
+                <h3 className="text-sm font-medium text-gray-500 mb-3">Survey QR Code</h3>
+                {selectedFeedback.qr_code ? (
+                  <QRCodeDisplay 
+                    base64QrCode={selectedFeedback.qr_code} 
+                    title="Customer Feedback QR" 
+                  />
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No QR code available for this feedback.</p>
+                )}
               </div>
             </div>
 

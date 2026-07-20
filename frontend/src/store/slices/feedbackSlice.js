@@ -1,13 +1,14 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axiosClient from "../../api/axiosClient"
+import { API_ENDPOINTS } from "../../api/apiConfig"
 
 export const submitEssay = createAsyncThunk("feedback/submitEssay", async (essayText, { rejectWithValue }) => {
   try {
-    // send the object with the field - essay_text
-    const response = await axiosClient.post("/api/essays/analyze", {
-      essay_text: essayText,
+    // send the object with the field - essay_text (or answers dict mapped to endpoint)
+    const response = await axiosClient.post(API_ENDPOINTS.SUBMISSIONS.SUBMIT("default_form"), {
+      answers: { feedback: essayText },
     })
-    return response.data // get results from the backend
+    return response // axiosClient returns response directly
   } catch (error) {
     return rejectWithValue(error.response?.data || "feedback analyze error")
   }
