@@ -1,83 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { AlertTriangle, CheckCircle, Search, Loader2 } from 'lucide-react';
-import ReviewCard from './ReviewCard';
+import React, { useState, useEffect } from "react"
+import { useSelector } from "react-redux"
+import { AlertTriangle, CheckCircle, Search, Loader2 } from "lucide-react"
+import ReviewCard from "./ReviewCard"
 
 const ReviewQueue = () => {
-  const [reviews, setReviews] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [notification, setNotification] = useState(null);
-  
+  const [reviews, setReviews] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [notification, setNotification] = useState(null)
+
   // const token = useSelector((state) => state.auth?.token);
 
   useEffect(() => {
     // Mocking the GET /reviews/queue endpoint
     const fetchQueue = async () => {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
-        // In reality: 
+        // In reality:
         // const response = await fetch('/api/reviews/queue', { headers: { Authorization: `Bearer ${token}` } });
         // const data = await response.json();
-        
-        // Mock data delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        const mockData = [
-          { 
-            id: "101", 
-            original_answers: { feedback: "This is absolutely the worst experience I've ever had. No one responds and the product is broken!" }, 
-            ai_analysis: { category: "Severe Complaint", summary: "User is extremely frustrated with product quality and support.", is_flagged: true, flag_reason: "High anger, mentions broken product", sentiment_score: 1 }, 
-            status: "pending_human_review", 
-            created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString() // 30 mins ago
-          },
-          { 
-            id: "102", 
-            original_answers: { feedback: "I am feeling very threatened by the recent changes to my account without my permission." }, 
-            ai_analysis: { category: "Security/Safety", summary: "User feels threatened regarding account security.", is_flagged: true, flag_reason: "Mentions 'threatened' and unauthorized changes", sentiment_score: 2 }, 
-            status: "pending_human_review", 
-            created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString() // 2 hours ago
-          }
-        ];
-        
-        setReviews(mockData);
-      } catch (error) {
-        console.error("Failed to fetch queue", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
-    fetchQueue();
-  }, []);
+        // Mock data delay
+        await new Promise(resolve => setTimeout(resolve, 800))
+
+        const mockData = [
+          {
+            id: "101",
+            original_answers: {
+              feedback: "This is absolutely the worst experience I've ever had. No one responds and the product is broken!",
+            },
+            ai_analysis: {
+              category: "Severe Complaint",
+              summary: "User is extremely frustrated with product quality and support.",
+              is_flagged: true,
+              flag_reason: "High anger, mentions broken product",
+              sentiment_score: 1,
+            },
+            status: "pending_human_review",
+            created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
+          },
+          {
+            id: "102",
+            original_answers: {
+              feedback: "I am feeling very threatened by the recent changes to my account without my permission.",
+            },
+            ai_analysis: {
+              category: "Security/Safety",
+              summary: "User feels threatened regarding account security.",
+              is_flagged: true,
+              flag_reason: "Mentions 'threatened' and unauthorized changes",
+              sentiment_score: 2,
+            },
+            status: "pending_human_review",
+            created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2 hours ago
+          },
+        ]
+
+        setReviews(mockData)
+      } catch (error) {
+        console.error("Failed to fetch queue", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchQueue()
+  }, [])
 
   const handleResolve = async (id, notes) => {
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
       // In reality:
-      // await fetch(`/api/reviews/${id}/resolve`, { 
-      //   method: 'PATCH', 
+      // await fetch(`/api/reviews/${id}/resolve`, {
+      //   method: 'PATCH',
       //   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       //   body: JSON.stringify({ reviewer_notes: notes })
       // });
 
       // Mock submit delay
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await new Promise(resolve => setTimeout(resolve, 600))
 
       // Update local state
-      setReviews(current => current.filter(r => r.id !== id));
-      
+      setReviews(current => current.filter(r => r.id !== id))
+
       // Show success toast
-      setNotification('Review successfully resolved and removed from queue.');
-      setTimeout(() => setNotification(null), 3000);
-      
+      setNotification("Review successfully resolved and removed from queue.")
+      setTimeout(() => setNotification(null), 3000)
     } catch (error) {
-      console.error("Failed to resolve", error);
-      alert("Failed to submit resolution. Please try again.");
+      console.error("Failed to resolve", error)
+      alert("Failed to submit resolution. Please try again.")
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-6 min-h-[calc(100vh-80px)]">
@@ -102,13 +117,13 @@ const ReviewQueue = () => {
           </div>
           <p className="text-slate-500 text-sm">Review and resolve AI-flagged customer feedback.</p>
         </div>
-        
+
         {/* Mock Search/Filter area */}
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Search reviews..." 
+          <input
+            type="text"
+            placeholder="Search reviews..."
             className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 outline-none transition-all w-full md:w-64"
           />
         </div>
@@ -128,11 +143,14 @@ const ReviewQueue = () => {
         {isLoading ? (
           // Skeleton Loader
           <div className="space-y-4">
-            {[1, 2, 3].map((n) => (
+            {[1, 2, 3].map(n => (
               <div key={n} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex gap-4 animate-pulse">
                 <div className="w-6 h-6 bg-slate-200 rounded-full flex-shrink-0 mt-1"></div>
                 <div className="flex-grow space-y-3">
-                  <div className="flex gap-2"><div className="w-16 h-5 bg-slate-200 rounded-full"></div><div className="w-24 h-5 bg-slate-200 rounded-full"></div></div>
+                  <div className="flex gap-2">
+                    <div className="w-16 h-5 bg-slate-200 rounded-full"></div>
+                    <div className="w-24 h-5 bg-slate-200 rounded-full"></div>
+                  </div>
                   <div className="w-3/4 h-5 bg-slate-200 rounded"></div>
                   <div className="w-1/2 h-4 bg-slate-200 rounded"></div>
                 </div>
@@ -154,18 +172,14 @@ const ReviewQueue = () => {
         ) : (
           // Review List
           <div className="space-y-5">
-            {reviews.map((review) => (
-              <ReviewCard 
-                key={review.id} 
-                review={review} 
-                onResolve={handleResolve} 
-              />
+            {reviews.map(review => (
+              <ReviewCard key={review.id} review={review} onResolve={handleResolve} />
             ))}
           </div>
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ReviewQueue;
+export default ReviewQueue
