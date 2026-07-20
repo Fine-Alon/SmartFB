@@ -1,25 +1,40 @@
-from motor.motor_asyncio import AsyncIOMotorClient
+"""
+MongoDB connection setup using PyMongo (AsyncMongoClient) and Beanie.
+"""
+from typing import Optional
+from pymongo import AsyncMongoClient
+from beanie import init_beanie
+
 from app.core.config import settings
+from app.models.user import User  # Must inherit from beanie.Document!
 
-class Database:
-    client: AsyncIOMotorClient = None
-    db = None
+_mongo_client: Optional[AsyncMongoClient] = None
 
-db_instance = Database()
 
-async def connect_to_mongo():
-    db_instance.client = AsyncIOMotorClient(settings.MONGODB_URI)
-    db_instance.db = db_instance.client[settings.DB_NAME]
+async def connect_to_mongo() -> None:
+    """Initializes PyMongo AsyncMongoClient and Beanie ODM on app startup."""
+    global _mongo_client
     
-    # Send a ping to confirm connection
-    await db_instance.client.admin.command('ping')
-    print(f"✅ Connected to MongoDB: {settings.DB_NAME}")
+    # 1. Create native PyMongo Async Client
+    _mongo_client = AsyncMongoClient(settings.MONGODB_URI)
+    
+    # 2. Initialize Beanie with your database & document models
+    await init_beanie(
+        database=_mongo_client[settings.DB_NAME],
+        document_models=[User]
+    )
 
-async def close_mongo_connection():
-    if db_instance.client:
-        db_instance.client.close()
-        print("🔒 MongoDB connection closed")
 
-# Helper function to access the DB in your API routes
+async def close_mongo_connection() -> None:
+    """Closes the MongoDB connection on app shutdown."""
+    global _mongo_client
+    if _mongo_client is not None:
+        await _mongo_client.close()
+
+
 def get_database():
-    return db_instance.db
+    """Returns the PyMongo Async Database instance."""
+    global _mongo_client
+    if _mongo_client is None:
+        raise RuntimeError("Database not initialized. Call connect_to_mongo first.")
+    return _mongo_client[settings.DB_NAME]
