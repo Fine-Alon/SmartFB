@@ -1,0 +1,230 @@
+import React, { useState } from "react"
+
+const FeedbackPage = () => {
+  // Mock data representing the Tickets from your backend
+  const [tickets, setTickets] = useState([
+    {
+      id: "TKT-001",
+      date: "2026-07-20",
+      customer: "John Doe",
+      contact: "john@example.com",
+      status: "requires_human_review",
+      aiCategory: "Complaint",
+      aiSentiment: "Negative",
+      aiSummary: "Customer is extremely angry about a billing error and is threatening legal action.",
+      flagReason: "Legal threat and abusive language detected",
+      rawText: "You guys charged me twice! I demand a refund immediately or I will sue you. Your support is garbage!",
+    },
+    {
+      id: "TKT-002",
+      date: "2026-07-19",
+      customer: "Sarah Smith",
+      contact: "sarah@example.com",
+      status: "auto_categorized",
+      aiCategory: "Feature Request",
+      aiSentiment: "Positive",
+      aiSummary: "Customer is requesting a dark mode feature for the mobile app.",
+      flagReason: null,
+      rawText: "I love using your platform, but it would be amazing if you could add a dark mode for nighttime reading. Thanks!",
+    },
+    {
+      id: "TKT-003",
+      date: "2026-07-19",
+      customer: "Mike Johnson",
+      contact: "mike@example.com",
+      status: "requires_human_review",
+      aiCategory: "Support Request",
+      aiSentiment: "Neutral",
+      aiSummary: "Customer server is down and they are losing revenue. High urgency.",
+      flagReason: "Urgent system outage reported",
+      rawText:
+        "My production server just went down and I cannot access any of my files. We are losing money every minute this is offline. Help ASAP!",
+    },
+  ])
+
+  const [filter, setFilter] = useState("All")
+  const [selectedTicket, setSelectedTicket] = useState(null)
+
+  // Filter Logic
+  const filteredTickets = tickets.filter(ticket => {
+    if (filter === "Requires Review") return ticket.status === "requires_human_review"
+    if (filter === "Auto-Resolved") return ticket.status === "auto_categorized"
+    return true
+  })
+
+  // Action Handlers
+  const handleResolve = id => {
+    setTickets(tickets.map(t => (t.id === id ? { ...t, status: "resolved" } : t)))
+    setSelectedTicket(null)
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      {/* Header & Filters */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Feedback Queue</h1>
+          <p className="text-gray-500 mt-1">Review AI-processed submissions and handle flagged tickets.</p>
+        </div>
+
+        {/* Filter Buttons */}
+        <div className="inline-flex bg-gray-100 p-1 rounded-lg">
+          {["All", "Requires Review", "Auto-Resolved"].map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                filter === f ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tickets Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-gray-700 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4 font-semibold">ID & Date</th>
+                <th className="px-6 py-4 font-semibold">Customer</th>
+                <th className="px-6 py-4 font-semibold">AI Category</th>
+                <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredTickets.map(ticket => (
+                <tr key={ticket.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900">{ticket.id}</div>
+                    <div className="text-xs text-gray-400">{ticket.date}</div>
+                  </td>
+                  <td className="px-6 py-4">{ticket.customer}</td>
+                  <td className="px-6 py-4">
+                    <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-medium">
+                      {ticket.aiCategory}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    {ticket.status === "requires_human_review" ? (
+                      <span className="inline-flex items-center text-red-700 bg-red-50 px-2.5 py-1 rounded-full text-xs font-medium border border-red-200">
+                        <span className="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span>
+                        Review Needed
+                      </span>
+                    ) : ticket.status === "resolved" ? (
+                      <span className="inline-flex items-center text-gray-700 bg-gray-100 px-2.5 py-1 rounded-full text-xs font-medium">
+                        Resolved
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center text-green-700 bg-green-50 px-2.5 py-1 rounded-full text-xs font-medium border border-green-200">
+                        <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5"></span>
+                        Auto-Categorized
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button onClick={() => setSelectedTicket(ticket)} className="text-blue-600 hover:text-blue-800 font-medium">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {filteredTickets.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                    No tickets found for this filter.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Ticket Details Modal */}
+      {selectedTicket && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Ticket {selectedTicket.id}</h2>
+                <p className="text-sm text-gray-500">
+                  From: {selectedTicket.customer} ({selectedTicket.contact})
+                </p>
+              </div>
+              <button onClick={() => setSelectedTicket(null)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* AI Analysis Block */}
+              <div
+                className={`p-4 rounded-lg border ${selectedTicket.status === "requires_human_review" ? "bg-red-50 border-red-100" : "bg-blue-50 border-blue-100"}`}
+              >
+                <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                  </svg>
+                  AI Analysis
+                </h3>
+                <p className="text-sm text-gray-800 mb-3">
+                  <span className="font-semibold">Summary:</span> {selectedTicket.aiSummary}
+                </p>
+                <div className="flex gap-3 text-xs">
+                  <span className="bg-white px-2 py-1 rounded shadow-sm">
+                    Category: <b>{selectedTicket.aiCategory}</b>
+                  </span>
+                  <span className="bg-white px-2 py-1 rounded shadow-sm">
+                    Sentiment: <b>{selectedTicket.aiSentiment}</b>
+                  </span>
+                </div>
+                {selectedTicket.flagReason && (
+                  <div className="mt-3 text-sm text-red-700 bg-red-100 px-3 py-2 rounded">
+                    <b>Flagged Reason:</b> {selectedTicket.flagReason}
+                  </div>
+                )}
+              </div>
+
+              {/* Raw Message Block */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Original Customer Message</h3>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-800 whitespace-pre-wrap">
+                  {selectedTicket.rawText}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-xl">
+              <button
+                onClick={() => setSelectedTicket(null)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Close
+              </button>
+              {selectedTicket.status === "requires_human_review" && (
+                <button
+                  onClick={() => handleResolve(selectedTicket.id)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  Mark as Resolved
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default FeedbackPage

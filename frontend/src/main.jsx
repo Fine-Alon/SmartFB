@@ -1,10 +1,17 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import React from "react"
+import ReactDOM from "react-dom/client"
+import { Provider } from "react-redux"
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+// We import the Redux store (you will need to create this file next)
+import { store } from "./store/store"
+
+import App from "./App"
+import "./index.css" // This must be imported to apply Tailwind classes
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <Provider store={store}>
+      <App />
+    </Provider>
+  </React.StrictMode>,
 )
