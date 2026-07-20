@@ -16,16 +16,16 @@ async def lifespan(app: FastAPI):
 # Pass lifespan into FastAPI
 app = FastAPI(title="SmartFB API", lifespan=lifespan)
 
-# CORS setup
-# CORS setup
+# CORS setup - מאפשרים את כל הכתובות המקומיות האפשריות של השרתים שלכם
 origins = [
     "http://localhost:5173",
-    "http://127.0.0.1:8000", # Add this line
-    "http://localhost:8000", # And this one, just in case
+    "http://localhost:5175",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5175",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 
-# OR, for the easiest debugging (allow everything):
-# origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -38,4 +38,5 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(customer.router)
 app.include_router(forms.router)
-
+app.include_router(analist.router)
+app.include_router(reviews.router)
