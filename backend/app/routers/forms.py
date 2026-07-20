@@ -3,54 +3,60 @@ from pydantic import BaseModel
 from typing import Dict, Any
 from datetime import datetime, timezone
 from ..services.ai_service import analyze_submission_text
-# ייבוא ה-DB (תתאים לחיבור המונגו שלך)
-# from app.db.database import db
+
+from ..core.db import get_database # לדוגמה, אם הקובץ יושב ב-app/db/mongodb.py
 
 router = APIRouter(prefix="/submissions", tags=["Submissions"])
 
 class SubmissionCreate(BaseModel):
-    # המבנה של הטופס שנשלח מהלקוח. זה דיקשנרי כי השאלות דינמיות.
+    # המבנה שמצפים לקבל מה-Frontend (מילון דינמי של שאלות ותשובות)
     answers: Dict[str, Any]
 
 @router.post("/{form_id}", status_code=status.HTTP_201_CREATED)
 async def submit_feedback(form_id: str, submission: SubmissionCreate):
     """
     נתיב ציבורי לקבלת טפסים מלקוחות.
-    מנתח את הטקסט עם AI, מחליט על סטטוס, ושומר במסד הנתונים.
+    מנתח את הטקסט עם AI, מחליט על סטטוס, ושומר ב-MongoDB.
     """
     
-    # 1. איסוף כל התשובות הטקסטואליות כדי שה-AI יוכל לקרוא אותן כבלוק אחד
+    # 1. שליפת אובייקט ה-Database בעזרת הפונקציה שלך
+    db = get_database()
+    
+    # 2. איסוף כל התשובות הטקסטואליות כדי שה-AI ינתח אותן כבלוק אחד
     text_values = [str(val) for val in submission.answers.values() if isinstance(val, str)]
     full_text = " ".join(text_values)
     
     if not full_text.strip():
-        raise HTTPException(status_code=400, detail="הטופס ריק או לא מכיל טקסט לניתוח")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="הטופס ריק או לא מכיל טקסט לניתוח"
+        )
 
-    # 2. שליחה ל-AI לניתוח
+    # 3. הפעלת מנוע ה-AI (Ollama)
     ai_result = await analyze_submission_text(full_text)
     
-    # 3. לוגיקת הניתוב (Routing) בהתאם לדגל האדום
+    # 4. לוגיקת ניתוב (Routing) לפי החלטת ה-AI
     if ai_result.get("is_flagged") is True:
-        submission_status = "pending_human_review" # יעבור לתור של העובדים
+        submission_status = "pending_human_review"  # עובר לתור המאובטח של העובדים
     else:
-        submission_status = "auto_processed" # יטופל אוטומטית וישמר לסטטיסטיקות
+        submission_status = "auto_processed"        # נסגר אוטומטית וממתין לסטטיסטיקות
         
-    # 4. הכנת המסמך לשמירה במונגו
+    # 5. הכנת הדוקומנט המלא לשמירה במונגו
     new_submission = {
         "form_id": form_id,
         "original_answers": submission.answers,
-        "ai_analysis": ai_result,  # מכיל את הקטגוריה, הסיכום והטקסט המתוקן
+        "ai_analysis": ai_result,  # מכיל קטגוריה, סיכום, טקסט מתוקן וסיבת דגל
         "status": submission_status,
         "created_at": datetime.now(timezone.utc),
-        "reviewer_notes": None, # העובד ימלא את זה בהמשך
+        "reviewer_notes": None,
         "resolved_at": None
     }
     
-    # 5. שמירה ב-Database
-    # result = await db.submissions.insert_one(new_submission)
+    # 6. שמירה פיזית בקולקשן submissions ב-DB שלך
+    result = db.submissions.insert_one(new_submission)
     
     return {
-        "message": "הפנייה התקבלה בהצלחה",
-        # "submission_id": str(result.inserted_id),
+        "message": "הפנייה התקבלה ועובדה בהצלחה",
+        "submission_id": str(result.inserted_id),
         "status": submission_status
     }

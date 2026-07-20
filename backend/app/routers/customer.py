@@ -1,7 +1,12 @@
 from fastapi import APIRouter
-from app.core.db import get_database
+from ..core.db import get_database
 
-router = APIRouter()
+router = APIRouter(
+prefix="/customers", 
+tags=["customers"]
+)
+
+
 
 @router.get("/")
 def get_all_customers():

@@ -1,9 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.db import connect_to_mongo, close_mongo_connection
-from app.api import auth
-from app.routers import customer
+from .app.core.db import connect_to_mongo, close_mongo_connection
+from .app.routers import customer,auth,forms
 
 
 # Lifespan context manager handles DB connection on startup & shutdown
@@ -32,5 +31,6 @@ app.add_middleware(
 
 # Register routers
 app.include_router(auth.router)
-app.include_router(customer.router, prefix="/customers", tags=["customers"])
+app.include_router(customer.router)
+app.include_router(forms.router)
 
