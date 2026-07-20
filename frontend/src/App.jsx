@@ -2,12 +2,15 @@ import React from "react"
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom"
 
 import MainLayout from "./components/layout/MainLayout"
+import SupportLayout from "./components/layout/SupportLayout"
 import HomePage from "./pages/HomePage"
 import AuthPage from "./pages/AuthPage"
 import DashboardPage from "./pages/DashboardPage"
 import FeedbackPage from "./pages/FeedbackPage"
 import FormBuilderPage from "./pages/FormBuilderPage"
 import AdminProfilePage from "./pages/AdminProfilePage"
+import SupportDashboard from "./pages/support/SupportDashboard"
+import ReviewQueue from "./pages/support/ReviewQueue"
 import ProtectedRoute from "./components/common/ProtectedRoute"
 
 const router = createBrowserRouter([
@@ -22,6 +25,7 @@ const router = createBrowserRouter([
   {
     element: <ProtectedRoute allowedRoles={["admin", "support"]} />,
     children: [
+      // Admin Layout wrapping common & admin-specific pages
       {
         element: <MainLayout />,
         children: [
@@ -39,6 +43,19 @@ const router = createBrowserRouter([
           },
         ],
       },
+      // Support Layout wrapping support-specific pages
+      {
+        element: <SupportLayout />,
+        children: [
+          {
+            element: <ProtectedRoute allowedRoles={["support", "admin"]} />,
+            children: [
+              { path: "/support/dashboard", element: <SupportDashboard /> },
+              { path: "/support/queue", element: <ReviewQueue /> },
+            ],
+          },
+        ],
+      },
     ],
   },
   {
@@ -52,3 +69,4 @@ function App() {
 }
 
 export default App
+
