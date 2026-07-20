@@ -8,9 +8,9 @@ from .app.routers import customer,auth,forms
 # Lifespan context manager handles DB connection on startup & shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    connect_to_mongo()
+    await connect_to_mongo()
     yield
-    close_mongo_connection()
+    await close_mongo_connection()
 
 
 # Pass lifespan into FastAPI
