@@ -21,7 +21,7 @@ const FeedbackPage = () => {
   })
 
   const handleResolve = id => {
-    dispatch(updateTicketStatus({ ticketId: id, newStatus: "resolved" }))
+    dispatch(updateFeedbackStatus({ feedbackId: id, notes: "Resolved via dashboard" }))
     setSelectedFeedback(null) // Close model window.
   }
 

@@ -1,11 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axiosClient from "../../api/axiosClient"
+import { API_ENDPOINTS } from "../../api/apiConfig"
 
 // 1. get feedbacks from the backend
 export const fetchFeedbacks = createAsyncThunk("queue/fetchFeedbacks", async (_, { rejectWithValue }) => {
   try {
-    const response = await axiosClient.get("/api/feedback")
-    return response.data // feedbacks array: [{ id: 1, customer: "John", status: "Review Needed", ... }]
+    const response = await axiosClient.get(API_ENDPOINTS.REVIEWS.GET_QUEUE)
+    return response // axiosClient interceptor returns response.data directly
   } catch (error) {
     return rejectWithValue(error.response?.data?.detail || "Failed to fetch feedbacks from server")
   }
@@ -14,14 +15,14 @@ export const fetchFeedbacks = createAsyncThunk("queue/fetchFeedbacks", async (_,
 // 2. async Thunk To change status of the feedback (f.e. resolved )
 export const updateFeedbackStatus = createAsyncThunk(
   "queue/updateFeedbackStatus",
-  async ({ feedbackId, newStatus }, { rejectWithValue }) => {
+  async ({ feedbackId, notes }, { rejectWithValue }) => {
     try {
-      const response = await axiosClient.patch(`/api/feedback/${feedbackId}/status`, {
-        status: newStatus,
+      const response = await axiosClient.patch(API_ENDPOINTS.REVIEWS.RESOLVE(feedbackId), {
+        reviewer_notes: notes || "Resolved by staff",
       })
-      return response.data //Return refreshed feedback.
+      return response // returns response.data
     } catch (error) {
-      return rejectWithValue("Failed to update feedback status")
+      return rejectWithValue(error.response?.data?.detail || "Failed to update feedback status")
     }
   },
 )
