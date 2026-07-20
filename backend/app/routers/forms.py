@@ -3,13 +3,11 @@ from pydantic import BaseModel
 from typing import Dict, Any
 from datetime import datetime, timezone
 from ..services.ai_service import analyze_submission_text
-
-from ..core.db import get_database # לדוגמה, אם הקובץ יושב ב-app/db/mongodb.py
+from ..core.db import get_database 
 
 router = APIRouter(prefix="/submissions", tags=["Submissions"])
 
 class SubmissionCreate(BaseModel):
-    # המבנה שמצפים לקבל מה-Frontend (מילון דינמי של שאלות ותשובות)
     answers: Dict[str, Any]
 
 @router.post("/{form_id}", status_code=status.HTTP_201_CREATED)
@@ -19,7 +17,6 @@ async def submit_feedback(form_id: str, submission: SubmissionCreate):
     מנתח את הטקסט עם AI, מחליט על סטטוס, ושומר ב-MongoDB.
     """
     
-    # 1. שליפת אובייקט ה-Database בעזרת הפונקציה שלך
     db = get_database()
     
     # 2. איסוף כל התשובות הטקסטואליות כדי שה-AI ינתח אותן כבלוק אחד
@@ -53,7 +50,7 @@ async def submit_feedback(form_id: str, submission: SubmissionCreate):
     }
     
     # 6. שמירה פיזית בקולקשן submissions ב-DB שלך
-    result = db.submissions.insert_one(new_submission)
+    result = await db.submissions.insert_one(new_submission)
     
     return {
         "message": "הפנייה התקבלה ועובדה בהצלחה",
