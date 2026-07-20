@@ -1,9 +1,10 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axiosClient from "../../api/axiosClient"
+import { API_ENDPOINTS } from "../../api/apiConfig"
 
 export const loginUser = createAsyncThunk("auth/loginUser", async (credentials, { rejectWithValue }) => {
   try {
-    const response = await axiosClient.post("/auth/login", credentials)
+    const response = await axiosClient.post(API_ENDPOINTS.AUTH.LOGIN, credentials)
     // תוקן: שימוש בהערה נכונה של JS ומחזירים את התשובה הנקייה
     return response
   } catch (error) {
