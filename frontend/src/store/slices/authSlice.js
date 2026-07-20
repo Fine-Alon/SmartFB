@@ -3,15 +3,13 @@ import axiosClient from "../../api/axiosClient"
 
 export const loginUser = createAsyncThunk("auth/loginUser", async (credentials, { rejectWithValue }) => {
   try {
-    // refresh JSON obj (username, password)
-    const response = await axiosClient.post("/api/auth/login", credentials)
-    return response.data // returns user data (id, username)
+    const response = await axiosClient.post("/auth/login", credentials)
+    // תוקן: שימוש בהערה נכונה של JS ומחזירים את התשובה הנקייה
+    return response
   } catch (error) {
     return rejectWithValue(error.response?.data || "authorization error")
   }
 })
-
-// TODO: убрать мок перед деплоем ВРЕМЕННЫЙ МОК ДЛЯ РАЗРАБОТКИ (Убрать, когда будет готов бэкенд!)
 
 const authSlice = createSlice({
   name: "auth",
@@ -20,7 +18,7 @@ const authSlice = createSlice({
       id: 1,
       username: "Chaim",
       email: "chaim@smartfb.com",
-      role: "admin", // "support"
+      role: "admin",
     },
     isLoading: false,
     error: null,

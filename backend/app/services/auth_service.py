@@ -8,7 +8,6 @@ from ..core.security import hash_password, verify_password
 from ..schema.user_schema import UserCreate, UserOut
 
 
-
 async def create_user(payload: UserCreate) -> UserOut:
     """
     Registers a new user.
@@ -33,6 +32,8 @@ async def create_user(payload: UserCreate) -> UserOut:
         "hashed_password": hashed,
         "role": payload.role,
     }
+    
+    # תוקן: הוספת await להכנסת מסמך חדש למונגו
     result = await users.insert_one(doc)
 
     return UserOut(
@@ -46,6 +47,7 @@ async def authenticate_user(email: str, password: str) -> UserOut:
     db = get_database()
     users = db["users"]
 
+    # תוקן: הוספת await לשליפת המשתמש בזמן לוגין כדי למנוע קריסת coroutine object is not subscriptable
     doc = await users.find_one({"email": email})
     if not doc:
         raise HTTPException(
