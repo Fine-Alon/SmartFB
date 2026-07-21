@@ -8,7 +8,7 @@ export const fetchDashboardStats = createAsyncThunk(
       const response = await axiosClient.get("/analytics/global-stats")
       return response
     } catch (error) {
-      return rejectWithValue(error.response?.data || "Failed to fetch dashboard stats")
+      return rejectWithValue(error.response?.data?.detail || error.message)
     }
   }
 )

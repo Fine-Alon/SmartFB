@@ -8,7 +8,7 @@ export const fetchFeedbacks = createAsyncThunk("queue/fetchFeedbacks", async (_,
     const response = await axiosClient.get(API_ENDPOINTS.REVIEWS.GET_ALL)
     return response // axiosClient interceptor returns response.data directly
   } catch (error) {
-    return rejectWithValue(error.response?.data?.detail || "Failed to fetch feedbacks from server")
+    return rejectWithValue(error.response?.data?.detail || error.message || "Failed to fetch feedbacks from server")
   }
 })
 

@@ -16,14 +16,20 @@ class ResolveRequest(BaseModel):
 @router.get("/queue")
 async def get_review_queue(current_user: tuple = Depends(allow_internal_staff)):
     """שליפת כל הפניות המסומנות בדגל אדום וממתינות לטיפול אנושי"""
-    queue_data = await get_pending_reviews()
-    return queue_data
+    try:
+        queue_data = await get_pending_reviews()
+        return queue_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/all")
 async def get_all_submissions(current_user: tuple = Depends(allow_internal_staff)):
     """שליפת כל הפניות (כולל פתורות אוטומטית)"""
-    all_data = await get_all_reviews()
-    return all_data
+    try:
+        all_data = await get_all_reviews()
+        return all_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.patch("/{submission_id}/resolve", status_code=status.HTTP_200_OK)
 async def resolve_flagged_submission(
@@ -32,8 +38,13 @@ async def resolve_flagged_submission(
     current_user: tuple = Depends(allow_internal_staff)
 ):
     """עדכון סטטוס הפנייה לפתורה בצירוף הערות הבודק האנושי"""
-    await resolve_submission(submission_id, payload.reviewer_notes)
-    return {"message": "Submission resolved successfully"}
+    try:
+        await resolve_submission(submission_id, payload.reviewer_notes)
+        return {"message": "Submission resolved successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.delete("/{submission_id}", status_code=status.HTTP_200_OK)
 async def delete_submission(
@@ -48,9 +59,14 @@ async def delete_submission(
         raise HTTPException(status_code=400, detail="Invalid submission ID format")
         
     # Ensure this matches the collection name where your reviews/submissions are stored (e.g., "submissions" or "reviews")
-    result = await db["submissions"].delete_one({"_id": obj_id})
-    
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Submission not found")
+    try:
+        result = db["submissions"].delete_one({"_id": obj_id})
         
-    return {"message": "Submission deleted successfully"}
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Submission not found")
+            
+        return {"message": "Submission deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

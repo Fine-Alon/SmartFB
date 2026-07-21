@@ -15,54 +15,69 @@ async def create_user(payload: UserCreate) -> UserOut:
     - Hashes the password before storing.
     - Returns a UserOut (no password hash).
     """
-    db = get_database()
-    users = db["users"]
+    try:
+        db = get_database()
+        users = db["users"]
 
-    # Check for duplicate email
-    existing = await users.find_one({"email": payload.email})
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+        # Check for duplicate email
+        existing = users.find_one({"email": payload.email})
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+
+        hashed = hash_password(payload.password)
+        doc = {
+            "email": payload.email,
+            "hashed_password": hashed,
+            "role": payload.role,
+        }
+        
+        result = users.insert_one(doc)
+
+        return UserOut(
+            id=str(result.inserted_id),
+            email=payload.email,
+            role=payload.role,
         )
-
-    hashed = hash_password(payload.password)
-    doc = {
-        "email": payload.email,
-        "hashed_password": hashed,
-        "role": payload.role,
-    }
-    
-    # תוקן: הוספת await להכנסת מסמך חדש למונגו
-    result = await users.insert_one(doc)
-
-    return UserOut(
-        id=str(result.inserted_id),
-        email=payload.email,
-        role=payload.role,
-    )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error during registration: {str(e)}"
+        )
 
 
 async def authenticate_user(email: str, password: str) -> UserOut:
-    db = get_database()
-    users = db["users"]
+    try:
+        db = get_database()
+        users = db["users"]
 
-    # תוקן: הוספת await לשליפת המשתמש בזמן לוגין כדי למנוע קריסת coroutine object is not subscriptable
-    doc = await users.find_one({"email": email})
-    if not doc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+        doc = users.find_one({"email": email})
+        if not doc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password"
+            )
+
+        # Handle null/missing password safely
+        if not password or not verify_password(doc.get("hashed_password", ""), password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password"
+            )
+
+        return UserOut(
+            id=str(doc["_id"]),
+            email=doc["email"],
+            role=doc["role"],
         )
-
-    if not verify_password(doc["hashed_password"], password):
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error during authentication: {str(e)}"
         )
-
-    return UserOut(
-        id=str(doc["_id"]),
-        email=doc["email"],
-        role=doc["role"],
-    )

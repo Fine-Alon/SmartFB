@@ -8,7 +8,7 @@ export const loginUser = createAsyncThunk("auth/loginUser", async (credentials, 
     // תוקן: שימוש בהערה נכונה של JS ומחזירים את התשובה הנקייה
     return response
   } catch (error) {
-    return rejectWithValue(error.response?.data || "authorization error")
+    return rejectWithValue(error.response?.data?.detail || error.message)
   }
 })
 

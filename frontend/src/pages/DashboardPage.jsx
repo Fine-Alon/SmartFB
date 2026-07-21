@@ -51,7 +51,7 @@ const DashboardPage = () => {
       {isLoading ? (
         <div className="text-center py-20 text-gray-500">Loading metrics...</div>
       ) : error ? (
-        <div className="text-center py-20 text-red-500">Error: {error}</div>
+        <div className="text-center py-20 text-red-500">Error: {typeof error === 'object' ? JSON.stringify(error) : error}</div>
       ) : (
         <>
           {/* Metrics Grid */}

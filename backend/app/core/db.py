@@ -1,39 +1,34 @@
 """
-MongoDB connection setup using PyMongo (AsyncMongoClient) and Beanie.
+Mongo connection setups for both MongoEngine and PyMongo.
 """
-from typing import Optional
-from pymongo import AsyncMongoClient
-from beanie import init_beanie
+from mongoengine import connect, disconnect
+from pymongo import MongoClient
+from ..core.config import settings
 
-from app.core.config import settings
-from app.models.user import User  # Must inherit from beanie.Document!
-
-_mongo_client: Optional[AsyncMongoClient] = None
+_mongo_client = None
 
 
 async def connect_to_mongo() -> None:
-    """Initializes PyMongo AsyncMongoClient and Beanie ODM on app startup."""
+    """Call once on app startup (e.g. in main.py's lifespan handler)."""
     global _mongo_client
-    
-    # 1. Create native PyMongo Async Client
-    _mongo_client = AsyncMongoClient(settings.MONGODB_URI)
-    
-    # 2. Initialize Beanie with your database & document models
-    await init_beanie(
-        database=_mongo_client[settings.DB_NAME],
-        document_models=[User]
-    )
+    # Connect MongoEngine
+    connect(db=settings.DB_NAME, host=settings.MONGODB_URI)
+    # Connect PyMongo Client
+    _mongo_client = MongoClient(settings.MONGODB_URI)
 
 
 async def close_mongo_connection() -> None:
-    """Closes the MongoDB connection on app shutdown."""
+    """Call once on app shutdown."""
     global _mongo_client
-    if _mongo_client is not None:
-        await _mongo_client.close()
+    # Disconnect MongoEngine
+    disconnect()
+    # Close PyMongo Client
+    if _mongo_client:
+        _mongo_client.close()
 
 
 def get_database():
-    """Returns the PyMongo Async Database instance."""
+    """Returns the PyMongo Database instance for synchronous collections query."""
     global _mongo_client
     if _mongo_client is None:
         raise RuntimeError("Database not initialized. Call connect_to_mongo first.")
