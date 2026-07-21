@@ -311,6 +311,17 @@ const FormBuilderPage = () => {
 
               <div className="text-center bg-white p-4 rounded-lg border border-green-200">
                 <p className="text-xs font-semibold text-gray-500 mb-2">QR Code</p>
+                {/* Clickable link above QR so admin can open/copy if QR fails */}
+                {publishedLink && (
+                  <a
+                    href={publishedLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 underline hover:text-blue-800 break-all block mb-3"
+                  >
+                    {publishedLink}
+                  </a>
+                )}
                 {qrCodeData ? (
                   <QRCodeDisplay base64QrCode={qrCodeData} />
                 ) : (

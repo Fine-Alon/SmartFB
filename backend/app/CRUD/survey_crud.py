@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from bson import ObjectId
-from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.database import Database
 
 from app.core.qr import generate_qr_code_base64
+from app.core.config import settings
 
 
 async def db_create_survey(db: Database, survey_dict: Dict[str, Any]) -> Dict[str, Any]:
@@ -15,11 +15,10 @@ async def db_create_survey(db: Database, survey_dict: Dict[str, Any]) -> Dict[st
     survey_dict["is_active"] = True
     survey_dict["created_at"] = datetime.now(timezone.utc)
 
-    # 2. Build URL and QR Code
-    frontend_url = f"http://localhost:5173/surveys/{str(survey_id)}"
+    # 2. Build URL and QR Code using dynamic FRONTEND_PUBLIC_URL
+    frontend_url = f"{settings.FRONTEND_PUBLIC_URL}/survey/{str(survey_id)}"
     
-    # ADD THESE TWO LINES:
-    survey_dict["link"] = frontend_url  # Send the link back to frontend
+    survey_dict["link"] = frontend_url
     survey_dict["qr_code"] = generate_qr_code_base64(frontend_url)
 
     # 3. Insert to DB

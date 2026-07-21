@@ -41,7 +41,9 @@ class SurveyOut(SurveyCreate):
     is_active: bool = True
     created_at: datetime
     created_by: Optional[str] = None
-    qr_code: Optional[str] = None      # 👈 Added Base64 QR code image string field
+    owner_id: Optional[str] = None
+    qr_code: Optional[str] = None      # 👈 Base64 QR code image string (raw, no data URI prefix)
+    link: Optional[str] = None         # 👈 Full public URL to the survey
     
 
     model_config = {

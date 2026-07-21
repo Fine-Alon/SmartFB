@@ -22,6 +22,6 @@ def generate_qr_code_base64(target_url: str) -> str:
     # Passing "PNG" as a positional string arg satisfies PIL/Pylance typing
     img.save(buffer, "PNG")
 
-    # Encode to Base64
+    # Encode to Base64 (raw, without data URI prefix — frontend adds it)
     base64_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
-    return f"data:image/png;base64,{base64_str}"
+    return base64_str
