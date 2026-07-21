@@ -3,7 +3,8 @@ import { store } from "../store/store"
 import { logout } from "../store/slices/authSlice"
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
+  // baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
+  baseURL: "https://commute-grain-ecosphere.ngrok-free.dev",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

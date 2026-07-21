@@ -1,6 +1,7 @@
 """
 Install: pip install pydantic-settings
 """
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,14 +11,17 @@ class Settings(BaseSettings):
     DB_NAME: str = "smartfb"
 
     # Public Frontend URL (used for QR codes and survey links)
-    FRONTEND_PUBLIC_URL: str = "http://localhost:5175"
+    # FRONTEND_PUBLIC_URL: str = "http://localhost:5175"
+    FRONTEND_PUBLIC_URL: str = "https://unbeaten-remote-platonic.ngrok-free.dev"
 
     # JWT
     SECRET_KEY: str = "change-this-in-.env"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
 
-    model_config = SettingsConfigDict(env_file=(".env", "app/core/.env"), extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=(".env", "app/core/.env"), extra="ignore"
+    )
 
 
 settings = Settings()
