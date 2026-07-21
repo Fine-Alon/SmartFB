@@ -54,7 +54,7 @@ async def submit_feedback(form_id: str, submission: SubmissionCreate):
     }
     
     # 6. שמירה פיזית בקולקשן submissions ב-DB שלך
-    result = await db.submissions.insert_one(new_submission)
+    result = db.submissions.insert_one(new_submission)
     
     return {
         "message": "הפנייה התקבלה ועובדה בהצלחה",

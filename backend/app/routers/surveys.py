@@ -83,7 +83,7 @@ async def list_surveys(user_data: tuple = Depends(require_admin)):
     """
     admin_id, role = user_data
     db = get_database()
-    return await db_get_all_surveys(db)
+    return await db_get_all_surveys(db, admin_id)
 
 @router.delete("/{survey_id}", status_code=status.HTTP_200_OK)
 async def delete_survey(

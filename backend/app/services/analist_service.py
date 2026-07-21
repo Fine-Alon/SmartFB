@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 async def get_form_statistics(form_id: str) -> dict:
     db = get_database()
     
-    total_submissions = await db.submissions.count_documents({"form_id": form_id})
+    total_submissions = db.submissions.count_documents({"form_id": form_id})
     if total_submissions == 0:
         return {
             "form_id": form_id,
@@ -23,10 +23,10 @@ async def get_form_statistics(form_id: str) -> dict:
         {"$match": {"form_id": form_id}},
         {"$group": {"_id": "$ai_analysis.category", "count": {"$sum": 1}}}
     ]
-    categories_cursor = await db.submissions.aggregate(category_pipeline)
+    categories_cursor = db.submissions.aggregate(category_pipeline)
     categories_breakdown: dict[str, int] = {
         str(doc["_id"]): int(doc["count"]) 
-        async for doc in categories_cursor 
+        for doc in categories_cursor 
         if doc.get("_id")
     }
 
@@ -34,10 +34,10 @@ async def get_form_statistics(form_id: str) -> dict:
         {"$match": {"form_id": form_id}},
         {"$group": {"_id": "$status", "count": {"$sum": 1}}}
     ]
-    status_cursor = await db.submissions.aggregate(status_pipeline)
+    status_cursor = db.submissions.aggregate(status_pipeline)
     status_breakdown: dict[str, int] = {
         str(doc["_id"]): int(doc["count"]) 
-        async for doc in status_cursor 
+        for doc in status_cursor 
         if doc.get("_id")
     }
 
@@ -51,8 +51,8 @@ async def get_form_statistics(form_id: str) -> dict:
             }
         }
     ]
-    metrics_cursor = await db.submissions.aggregate(metrics_pipeline)
-    metrics_list = [doc async for doc in metrics_cursor]
+    metrics_cursor = db.submissions.aggregate(metrics_pipeline)
+    metrics_list = [doc for doc in metrics_cursor]
     
     avg_ai_sentiment = 0.0
     avg_user_rating = 0.0

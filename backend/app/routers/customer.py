@@ -13,8 +13,8 @@ tags=["customers"]
 async def get_all_customers():
     db = get_database()
     
-    # Use to_list(100) with await for PyMongo AsyncCursor
-    customers = await db["customers"].find().to_list(100)
+    # Use list with limit for PyMongo sync query
+    customers = list(db["customers"].find().limit(100))
 
     # Convert BSON ObjectIds to string for JSON serialization
     for customer in customers:
