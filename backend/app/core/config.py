@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     MONGODB_URI: str = "mongodb://localhost:27017"
     DB_NAME: str = "smartfb"
 
+    # Public Frontend URL (used for QR codes and survey links)
+    FRONTEND_PUBLIC_URL: str = "http://localhost:5175"
+
     # JWT
     SECRET_KEY: str = "change-this-in-.env"
     ALGORITHM: str = "HS256"

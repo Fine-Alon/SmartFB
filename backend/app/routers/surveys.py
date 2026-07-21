@@ -1,9 +1,5 @@
 from typing import List
 from fastapi import APIRouter, HTTPException, status, Depends
-from fastapi import APIRouter, HTTPException, status, Depends
-import qrcode
-import base64
-import io
 
 from ..core.db import get_database
 from ..schema.survey_schema import SurveyCreate, SurveyOut
@@ -21,7 +17,6 @@ router = APIRouter(
 )
 
 
-# Add these to your imports at the top
 @router.post("/", response_model=SurveyOut, status_code=status.HTTP_201_CREATED)
 async def create_survey(
     payload: SurveyCreate,
@@ -33,28 +28,8 @@ async def create_survey(
     survey_dict = payload.model_dump()
     survey_dict["owner_id"] = admin_id
 
-    # 1. Create the survey in DB
+    # QR code, link, and all fields are generated inside db_create_survey
     new_survey = await db_create_survey(db, survey_dict)
-    
-    # 2. Generate QR Code
-    # Assuming new_survey is a dictionary containing the _id
-    survey_id = str(new_survey["_id"]) 
-    survey_url = f"https://smartfb.com/share/{survey_id}"
-    
-    qr = qrcode.QRCode(version=1, box_size=10, border=5)
-    qr.add_data(survey_url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    # Save to buffer and encode
-    buffered = io.BytesIO()
-    img.save(buffered, "PNG")
-    img_str = base64.b64encode(buffered.getvalue()).decode()
-    
-    # 3. Inject the QR code and link into the survey dictionary
-    # These match the fields you just added to SurveyOut
-    new_survey["qr_code"] = img_str
-    new_survey["link"] = survey_url
     
     return new_survey
 
