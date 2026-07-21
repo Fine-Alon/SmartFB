@@ -2,6 +2,7 @@
 Auth router: exposes /auth/register, /auth/login, /auth/logout.
 All database work is delegated to app.services.auth_service.
 """
+
 from fastapi import APIRouter, Response, status
 from ..schema.user_schema import UserCreate, UserLogin, UserOut
 from ..services import auth_service
@@ -37,8 +38,10 @@ async def login(payload: UserLogin, response: Response):
         key=COOKIE_NAME,
         value=token,
         httponly=True,
-        samesite="lax",
-        secure=False,  # set True in production (HTTPS)
+        # ВАЖНО: Разрешаем кросс-доменные запросы между двумя ngrok
+        samesite="none",
+        # ВАЖНО: ngrok работает по HTTPS, поэтому secure должен быть True
+        secure=True,
     )
 
     return user
@@ -49,5 +52,10 @@ async def logout(response: Response):
     """
     Clear the auth cookie and end the session.
     """
-    response.delete_cookie(key=COOKIE_NAME, httponly=True, samesite="lax")
+    response.delete_cookie(
+        key=COOKIE_NAME,
+        httponly=True,
+        samesite="none",  # Здесь тоже меняем, иначе кука не удалится при выходе
+        secure=True,
+    )
     return {"message": "Logged out successfully"}
